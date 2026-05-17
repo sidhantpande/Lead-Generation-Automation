@@ -2,8 +2,10 @@ import sys
 from pathlib import Path
 from loguru import logger
 
-# Ensure logs directory exists
-LOGS_DIR = Path(__file__).parent.parent.parent / "logs"
+import tempfile
+
+# Ensure logs directory exists outside the workspace in system temporary files to prevent browser reloads
+LOGS_DIR = Path(tempfile.gettempdir()) / "lead_gen_logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 log_file = LOGS_DIR / "pipeline.log"
 
