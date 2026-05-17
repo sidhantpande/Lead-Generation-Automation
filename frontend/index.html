@@ -681,9 +681,17 @@
                 });
                 
                 if (!response.ok) {
-                    // Check if response is JSON error
-                    const errData = await response.json();
-                    throw new Error(errData.detail || `Server returned HTTP status ${response.status}`);
+                    const errText = await response.text();
+                    let errMsg = `Server returned HTTP status ${response.status}`;
+                    try {
+                        const errData = JSON.parse(errText);
+                        errMsg = errData.detail || errMsg;
+                    } catch (parseErr) {
+                        if (errText && errText.trim()) {
+                            errMsg = errText;
+                        }
+                    }
+                    throw new Error(errMsg);
                 }
 
                 // Read body Stream reader
