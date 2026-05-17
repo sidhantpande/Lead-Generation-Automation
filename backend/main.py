@@ -177,7 +177,7 @@ async def submit_lead(lead: LeadInput):
         yield yield_event("running", f"Step 7: Accessing Google Drive and uploading report file...")
         
         try:
-            drive_link = upload_pdf_to_drive(pdf_path, lead.company_name)
+            drive_link = await asyncio.to_thread(upload_pdf_to_drive, pdf_path, lead.company_name)
             yield yield_event("running", "Upload complete. Access permissions updated to viewable.", level="success", step_completed=7, step_active=8)
             await asyncio.sleep(0.5)
         except Exception as e:
@@ -192,7 +192,7 @@ async def submit_lead(lead: LeadInput):
         yield yield_event("running", "Step 8: Appending lead data record row in Google Sheets base...")
         
         try:
-            log_lead_to_sheets(lead, drive_link, status="Success")
+            await asyncio.to_thread(log_lead_to_sheets, lead, drive_link, "Success")
             yield yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9)
             await asyncio.sleep(0.5)
         except Exception as e:
@@ -207,7 +207,7 @@ async def submit_lead(lead: LeadInput):
         yield yield_event("running", f"Step 9: Connecting to Gmail SMTP and dispatching structured HTML email with PDF attached to {lead.email}...")
         
         try:
-            send_report_email(lead, pdf_path, drive_link)
+            await asyncio.to_thread(send_report_email, lead, pdf_path, drive_link)
             yield yield_event("running", "Email successfully delivered via Gmail SMTP.", level="success", step_completed=9)
             await asyncio.sleep(0.5)
         except Exception as e:
