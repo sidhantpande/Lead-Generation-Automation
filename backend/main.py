@@ -266,4 +266,4 @@ async def submit_lead(lead: LeadInput):
                 break
             yield event
 
-    return StreamingResponse(pipeline_generator(lead), media_type="text/event-stream")
+    return StreamingResponse(pipeline_generator(), media_type="text/event-stream")
