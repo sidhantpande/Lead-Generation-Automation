@@ -35,13 +35,11 @@ async def generate_gemini_content_with_fallback(
     this function dynamically falls back to the next available model in the rotation pool.
     """
     models = [
-        "gemini-2.5-flash", 
-        "gemini-2.0-flash", 
+        "gemini-3.1-flash-lite",
         "gemini-2.5-flash-lite",
-        "gemini-2.0-flash-lite",
-        "gemini-flash-latest",
-        "gemini-flash-lite-latest",
-        "gemini-2.5-pro"
+        "gemini-3-flash-preview",
+        "gemini-2.5-flash",
+        "gemini-flash-latest"
     ]
     
     config = types.GenerateContentConfig()
