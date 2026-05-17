@@ -90,152 +90,180 @@ async def submit_lead(lead: LeadInput):
 
         logger.info(f"New pipeline connection request received for {lead.company_name} ({lead.email})")
         
-        # ==========================================
-        # STEP 0: Configuration Validation Checkpoint
-        # ==========================================
-        yield yield_event("running", "Step 0: Checking environment configurations and active API keys...", step_active=0)
-        missing_configs = settings.validate_setup()
-        
-        if missing_configs:
-            err_msg = f"Pipeline terminated: Configuration variables missing: {', '.join(missing_configs)}"
-            logger.error(err_msg)
-            yield yield_event("error", err_msg, level="error", step_failed=0)
-            return
+        event_queue = asyncio.Queue()
 
-        yield yield_event("running", "All essential configuration requirements validated successfully.", level="success", step_completed=0, step_active=1)
-        await asyncio.sleep(0.5)
+        async def run_pipeline_task():
+            try:
+                # ==========================================
+                # STEP 0: Configuration Validation Checkpoint
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", "Step 0: Checking environment configurations and active API keys...", step_active=0))
+                missing_configs = settings.validate_setup()
+                
+                if missing_configs:
+                    err_msg = f"Pipeline terminated: Configuration variables missing: {', '.join(missing_configs)}"
+                    logger.error(err_msg)
+                    event_queue.put_nowait(yield_event("error", err_msg, level="error", step_failed=0))
+                    event_queue.put_nowait(None)
+                    return
 
-        # ==========================================
-        # STEP 1: Website Scraping
-        # ==========================================
-        yield yield_event("running", f"Step 1: Commencing scraping sequence for: {lead.website}")
-        
-        try:
-            scraped_content = await scrape_website(lead.website)
-            yield yield_event("running", "Website scraping complete. Text extraction finished successfully.", level="success", step_completed=1, step_active=2)
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical Scraping Failure:\n{err_trace}")
-            yield yield_event("error", f"Scraping step encountered a fatal issue: {str(e)}", level="error", step_failed=1)
-            return
+                event_queue.put_nowait(yield_event("running", "All essential configuration requirements validated successfully.", level="success", step_completed=0, step_active=1))
+                await asyncio.sleep(0.5)
 
-        # ==========================================
-        # STEP 2-5: Multi-AI Enrichment Pipeline
-        # ==========================================
-        yield yield_event("running", "Step 2: Triggering Gemini 1.5 Pro Broad Search Sweep...")
-        
-        try:
-            # We run enrichment.py pipeline which internally runs step 2, 3, 4, 5
-            # To show a live visual update, we will run them individually in main or within enrichment.
-            # But running them here allows granular visual step increments on the frontend!
-            
-            # Step 2: Gemini Broad Sweep
-            from backend.enrichment import run_gemini_broad_sweep, run_openai_prompt_generator, run_gemini_deep_research, run_openai_content_synthesis
-            
-            broad_sweep = await run_gemini_broad_sweep(lead)
-            yield yield_event("running", "Broad search sweep finished. Digital footprint mapped.", level="success", step_completed=2, step_active=3)
-            await asyncio.sleep(0.5)
-            
-            # Step 3: GPT-4o Prompt Synthesis
-            yield yield_event("running", "Step 3: Directing GPT-4o to analyze broad sweep data and construct 6 tailored queries...")
-            custom_prompts = await run_openai_prompt_generator(lead, broad_sweep, scraped_content)
-            yield yield_event("running", "GPT-4o successfully generated 6 custom research queries.", level="success", step_completed=3, step_active=4)
-            await asyncio.sleep(0.5)
-            
-            # Step 4: Gemini Deep Category Searches
-            yield yield_event("running", "Step 4: Prompting Gemini 1.5 Pro with Google Search Grounding to research all 6 verticals...")
-            deep_research = await run_gemini_deep_research(custom_prompts)
-            yield yield_event("running", "Gemini 6-category deep web scans completed.", level="success", step_completed=4, step_active=5)
-            await asyncio.sleep(0.5)
-            
-            # Step 5: GPT-4o Business Synthesis
-            yield yield_event("running", "Step 5: Synthesizing deep intelligence raw scans into 10-page consult copy...")
-            enriched_report = await run_openai_content_synthesis(lead, broad_sweep, scraped_content, deep_research)
-            yield yield_event("running", "Executive report contents synthesized and structured.", level="success", step_completed=5, step_active=6)
-            await asyncio.sleep(0.5)
-            
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical AI Enrichment Failure:\n{err_trace}")
-            # Identify which step failed to map it on frontend
-            failed_idx = 2
-            if "prompt_generator" in err_trace or "Step 3" in err_trace: failed_idx = 3
-            elif "deep_research" in err_trace or "Step 4" in err_trace: failed_idx = 4
-            elif "content_synthesis" in err_trace or "Step 5" in err_trace: failed_idx = 5
-            
-            yield yield_event("error", f"AI Enrichment pipeline halted: {str(e)}", level="error", step_failed=failed_idx)
-            return
+                # ==========================================
+                # STEP 1: Website Scraping
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", f"Step 1: Commencing scraping sequence for: {lead.website}"))
+                
+                try:
+                    scraped_content = await scrape_website(lead.website)
+                    event_queue.put_nowait(yield_event("running", "Website scraping complete. Text extraction finished successfully.", level="success", step_completed=1, step_active=2))
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical Scraping Failure:\n{err_trace}")
+                    event_queue.put_nowait(yield_event("error", f"Scraping step encountered a fatal issue: {str(e)}", level="error", step_failed=1))
+                    event_queue.put_nowait(None)
+                    return
 
-        # ==========================================
-        # STEP 6: PDF Report Layout Compilation
-        # ==========================================
-        yield yield_event("running", "Step 6: Rendering Jinja2 template and compiling into premium A4 PDF...")
-        
-        try:
-            pdf_path = await generate_pdf_report(lead, enriched_report)
-            yield yield_event("running", f"PDF compiled successfully. Saved locally: {pdf_path.name}", level="success", step_completed=6, step_active=7)
-            await asyncio.sleep(0.5)
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical PDF Compilation Failure:\n{err_trace}")
-            yield yield_event("error", f"PDF Generation step encountered a compile error: {str(e)}", level="error", step_failed=6)
-            return
+                # ==========================================
+                # STEP 2-5: Multi-AI Enrichment Pipeline
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", "Step 2: Triggering Gemini 1.5 Pro Broad Search Sweep..."))
+                
+                try:
+                    # Step 2: Gemini Broad Sweep
+                    from backend.enrichment import run_gemini_broad_sweep, run_openai_prompt_generator, run_gemini_deep_research, run_openai_content_synthesis
+                    
+                    broad_sweep = await run_gemini_broad_sweep(lead)
+                    event_queue.put_nowait(yield_event("running", "Broad search sweep finished. Digital footprint mapped.", level="success", step_completed=2, step_active=3))
+                    await asyncio.sleep(0.5)
+                    
+                    # Define live progress callback for nested operations
+                    async def progress_callback(msg: str, lvl: str = "info"):
+                        event_queue.put_nowait(yield_event("running", msg, level=lvl, step_active=4))
+                    
+                    # Step 3: GPT-4o Prompt Synthesis
+                    event_queue.put_nowait(yield_event("running", "Step 3: Directing GPT-4o to analyze broad sweep data and construct 6 tailored queries..."))
+                    custom_prompts = await run_openai_prompt_generator(lead, broad_sweep, scraped_content)
+                    event_queue.put_nowait(yield_event("running", "GPT-4o successfully generated 6 custom research queries.", level="success", step_completed=3, step_active=4))
+                    await asyncio.sleep(0.5)
+                    
+                    # Step 4: Gemini Deep Category Searches
+                    event_queue.put_nowait(yield_event("running", "Step 4: Prompting Gemini 1.5 Pro with Google Search Grounding to research all 6 verticals..."))
+                    deep_research = await run_gemini_deep_research(custom_prompts, progress_callback)
+                    event_queue.put_nowait(yield_event("running", "Gemini 6-category deep web scans completed.", level="success", step_completed=4, step_active=5))
+                    await asyncio.sleep(0.5)
+                    
+                    # Step 5: GPT-4o Business Synthesis
+                    event_queue.put_nowait(yield_event("running", "Step 5: Synthesizing deep intelligence raw scans into 10-page consult copy..."))
+                    enriched_report = await run_openai_content_synthesis(lead, broad_sweep, scraped_content, deep_research)
+                    event_queue.put_nowait(yield_event("running", "Executive report contents synthesized and structured.", level="success", step_completed=5, step_active=6))
+                    await asyncio.sleep(0.5)
+                    
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical AI Enrichment Failure:\n{err_trace}")
+                    # Identify which step failed to map it on frontend
+                    failed_idx = 2
+                    if "prompt_generator" in err_trace or "Step 3" in err_trace: failed_idx = 3
+                    elif "deep_research" in err_trace or "Step 4" in err_trace: failed_idx = 4
+                    elif "content_synthesis" in err_trace or "Step 5" in err_trace: failed_idx = 5
+                    
+                    event_queue.put_nowait(yield_event("error", f"AI Enrichment pipeline halted: {str(e)}", level="error", step_failed=failed_idx))
+                    event_queue.put_nowait(None)
+                    return
 
-        # ==========================================
-        # STEP 7: Google Drive Upload
-        # ==========================================
-        yield yield_event("running", f"Step 7: Accessing Google Drive and uploading report file...")
-        
-        try:
-            drive_link = await asyncio.to_thread(upload_pdf_to_drive, pdf_path, lead.company_name)
-            yield yield_event("running", "Upload complete. Access permissions updated to viewable.", level="success", step_completed=7, step_active=8)
-            await asyncio.sleep(0.5)
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical Google Drive Failure:\n{err_trace}")
-            yield yield_event("error", f"Google Drive step encountered a fatal issue: {str(e)}", level="error", step_failed=7)
-            return
+                # ==========================================
+                # STEP 6: PDF Report Layout Compilation
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", "Step 6: Rendering Jinja2 template and compiling into premium A4 PDF..."))
+                
+                try:
+                    pdf_path = await generate_pdf_report(lead, enriched_report)
+                    event_queue.put_nowait(yield_event("running", f"PDF compiled successfully. Saved locally: {pdf_path.name}", level="success", step_completed=6, step_active=7))
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical PDF Compilation Failure:\n{err_trace}")
+                    event_queue.put_nowait(yield_event("error", f"PDF Generation step encountered a compile error: {str(e)}", level="error", step_failed=6))
+                    event_queue.put_nowait(None)
+                    return
 
-        # ==========================================
-        # STEP 8: Google Sheets Logging
-        # ==========================================
-        yield yield_event("running", "Step 8: Appending lead data record row in Google Sheets base...")
-        
-        try:
-            await asyncio.to_thread(log_lead_to_sheets, lead, drive_link, "Success")
-            yield yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9)
-            await asyncio.sleep(0.5)
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical Google Sheets Failure:\n{err_trace}")
-            yield yield_event("error", f"Google Sheets step encountered a fatal database issue: {str(e)}", level="error", step_failed=8)
-            return
+                # ==========================================
+                # STEP 7: Google Drive Upload
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", f"Step 7: Accessing Google Drive and uploading report file..."))
+                
+                try:
+                    drive_link = await asyncio.to_thread(upload_pdf_to_drive, pdf_path, lead.company_name)
+                    event_queue.put_nowait(yield_event("running", "Upload complete. Access permissions updated to viewable.", level="success", step_completed=7, step_active=8))
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical Google Drive Failure:\n{err_trace}")
+                    event_queue.put_nowait(yield_event("error", f"Google Drive step encountered a fatal issue: {str(e)}", level="error", step_failed=7))
+                    event_queue.put_nowait(None)
+                    return
 
-        # ==========================================
-        # STEP 9: Gmail SMTP Email Dispatch
-        # ==========================================
-        yield yield_event("running", f"Step 9: Connecting to Gmail SMTP and dispatching structured HTML email with PDF attached to {lead.email}...")
-        
-        try:
-            await asyncio.to_thread(send_report_email, lead, pdf_path, drive_link)
-            yield yield_event("running", "Email successfully delivered via Gmail SMTP.", level="success", step_completed=9)
-            await asyncio.sleep(0.5)
-        except Exception as e:
-            err_trace = traceback.format_exc()
-            logger.error(f"Critical Email Dispatch Failure:\n{err_trace}")
-            yield yield_event("error", f"Gmail SMTP step encountered a delivery failure: {str(e)}", level="error", step_failed=9)
-            return
-            
-        # ==========================================
-        # PIPELINE COMPLETE SUCCESS STATE
-        # ==========================================
-        yield yield_event(
-            "success", 
-            "Pipeline successfully completed! All steps processed without errors.", 
-            level="success",
-            filename=pdf_path.name,
-            drive_link=drive_link
-        )
-        logger.info(f"Pipeline finished successfully for {lead.company_name}! Shared file: {pdf_path.name}")
-        
-    return StreamingResponse(pipeline_generator(), media_type="text/event-stream")
+                # ==========================================
+                # STEP 8: Google Sheets Logging
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", "Step 8: Appending lead data record row in Google Sheets base..."))
+                
+                try:
+                    await asyncio.to_thread(log_lead_to_sheets, lead, drive_link, "Success")
+                    event_queue.put_nowait(yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9))
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical Google Sheets Failure:\n{err_trace}")
+                    event_queue.put_nowait(yield_event("error", f"Google Sheets step encountered a fatal database issue: {str(e)}", level="error", step_failed=8))
+                    event_queue.put_nowait(None)
+                    return
+
+                # ==========================================
+                # STEP 9: Gmail SMTP Email Dispatch
+                # ==========================================
+                event_queue.put_nowait(yield_event("running", f"Step 9: Connecting to Gmail SMTP and dispatching structured HTML email with PDF attached to {lead.email}..."))
+                
+                try:
+                    await asyncio.to_thread(send_report_email, lead, pdf_path, drive_link)
+                    event_queue.put_nowait(yield_event("running", "Email successfully delivered via Gmail SMTP.", level="success", step_completed=9))
+                    await asyncio.sleep(0.5)
+                except Exception as e:
+                    err_trace = traceback.format_exc()
+                    logger.error(f"Critical Email Dispatch Failure:\n{err_trace}")
+                    event_queue.put_nowait(yield_event("error", f"Gmail SMTP step encountered a delivery failure: {str(e)}", level="error", step_failed=9))
+                    event_queue.put_nowait(None)
+                    return
+                    
+                # ==========================================
+                # PIPELINE COMPLETE SUCCESS STATE
+                # ==========================================
+                event_queue.put_nowait(yield_event(
+                    "success", 
+                    "Pipeline successfully completed! All steps processed without errors.", 
+                    level="success",
+                    filename=pdf_path.name,
+                    drive_link=drive_link
+                ))
+                logger.info(f"Pipeline finished successfully for {lead.company_name}! Shared file: {pdf_path.name}")
+                event_queue.put_nowait(None)
+                
+            except Exception as outer_e:
+                err_trace = traceback.format_exc()
+                logger.error(f"Unhandled Pipeline Task Error:\n{err_trace}")
+                event_queue.put_nowait(yield_event("error", f"Unhandled pipeline crash: {str(outer_e)}", level="error"))
+                event_queue.put_nowait(None)
+
+        # Proactively fire the pipeline run inside an isolated background event loop task
+        asyncio.create_task(run_pipeline_task())
+
+        # Stream yielded NDJSON events to the client in real-time as they arrive in the queue
+        while True:
+            event = await event_queue.get()
+            if event is None:
+                break
+            yield event
+
+    return StreamingResponse(pipeline_generator(lead), media_type="text/event-stream")

@@ -144,26 +144,48 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
     )
     return response.text or ""
 
-async def run_gemini_deep_research(custom_prompts: Dict[str, str]) -> Dict[str, str]:
+async def run_gemini_deep_research(custom_prompts: Dict[str, str], progress_callback = None) -> Dict[str, str]:
     """
     Step 4: Executes 6 deep-research queries with rate-limit friendly serialization.
     Uses an asyncio.Semaphore(1) and micro-staggering to remain fully compatible with Free Tier API quotas.
     """
     log_step(4, "ENRICHMENT", "Initiating Gemini deep research pass for 6 strategic verticals")
+    if progress_callback:
+        await progress_callback("Deep Research: Sequential grounding analysis for 6 target verticals initialized...", "info")
     
     sem = asyncio.Semaphore(1)  # Restrict to max 1 concurrent query to avoid free tier spikes
     
+    # Pre-map category names to human-friendly titles for logs
+    pretty_categories = {
+        "industry_landscape": "Industry Landscape & Trends",
+        "competitor_analysis": "Competitive Context",
+        "social_media_presence": "Social Media Footprint",
+        "recent_news": "Recent News & Events",
+        "growth_signals": "Growth Signals & Hirings",
+        "pain_points": "Pain Points & Core Friction"
+    }
+
     async def run_single_category_sweep(category: str, query: str) -> tuple[str, str]:
         async with sem:
             try:
                 # Add micro-stagger sleep between sequential requests
                 await asyncio.sleep(2)
+                pretty_name = pretty_categories.get(category, category)
+                if progress_callback:
+                    await progress_callback(f"Grounding Search: Querying Google Search for '{pretty_name}'...", "info")
+                
                 summary = await run_gemini_category_sweep(category, query)
+                
                 log_step(4, "ENRICHMENT", f"Completed category sweep: {category}", "SUCCESS")
+                if progress_callback:
+                    await progress_callback(f"Grounding Search Success: Fully analyzed '{pretty_name}' data.", "success")
+                
                 return category, summary
             except Exception as e:
                 logger.error(f"Failed deep research category '{category}': {str(e)}")
                 log_step(4, "ENRICHMENT", f"Failed category sweep: {category}", "WARNING")
+                if progress_callback:
+                    await progress_callback(f"Grounding Search Alert: Non-fatal challenge in '{pretty_categories.get(category, category)}' - utilizing static context.", "warning")
                 return category, f"Research failed. Insufficient online data for this vertical. Details: {str(e)}"
 
     # Generate concurrent coroutines for all prompts (will be processed sequentially due to semaphore)
