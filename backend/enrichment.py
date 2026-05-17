@@ -23,10 +23,75 @@ def get_gemini_client() -> genai.Client:
         raise ValueError("Missing GEMINI_API_KEY. Configure it in your .env file.")
     return genai.Client(api_key=settings.GEMINI_API_KEY)
 
-@gemini_retry_decorator("Gemini Broad Sweep")
-async def run_gemini_broad_sweep(lead: LeadInput) -> str:
+async def generate_gemini_content_with_fallback(
+    client: genai.Client, 
+    prompt: str, 
+    search_grounding: bool = False,
+    progress_callback = None
+) -> str:
     """
-    Step 1: Executes a broad web-search sweep via Gemini 1.5 Pro to gather overall details on the company.
+    Executes a Gemini generation call with automatic model rotation fallback.
+    If a model hits a 429 RESOURCE_EXHAUSTED daily quota or persistent rate limits,
+    this function dynamically falls back to the next available model in the rotation pool.
+    """
+    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+    
+    config = types.GenerateContentConfig()
+    if search_grounding:
+        config.tools = [types.Tool(google_search=types.GoogleSearch())]
+        
+    loop = asyncio.get_event_loop()
+    
+    for idx, model in enumerate(models):
+        for attempt in range(1, 4):  # Up to 3 attempts per model with a small stagger wait
+            try:
+                logger.info(f"Attempting Gemini generation using model '{model}' (Attempt #{attempt})")
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                        config=config
+                    )
+                )
+                return response.text or ""
+            except Exception as e:
+                err_msg = str(e)
+                # Check for 429/Resource Exhausted rate limits
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                    # If this is attempt 1 or 2, do a short stagger retry on the same model
+                    if attempt < 3:
+                        wait_time = attempt * 3
+                        logger.warning(f"Model '{model}' hit 429 rate limit. Retrying same model in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                    
+                    # If all attempts exhausted on this model, rotate to the next fallback model
+                    if idx < len(models) - 1:
+                        next_model = models[idx+1]
+                        logger.warning(
+                            f"Model '{model}' completely exhausted rate limits/quota. "
+                            f"Rotating dynamically to fallback model: '{next_model}'..."
+                        )
+                        if progress_callback:
+                            await progress_callback(
+                                f"Quota Alert: Free Tier limit for '{model}' reached. Swapping search engine to fallback model '{next_model}'...",
+                                "warning"
+                            )
+                        break  # Break attempt loop to proceed to next model in the outer pool
+                
+                # For non-429 exceptions or if we are out of fallback models, raise immediately
+                if idx == len(models) - 1 and attempt == 3:
+                    raise e
+                
+                logger.error(f"Non-fatal error on model '{model}': {err_msg}. Moving to fallback...")
+                break
+                
+    raise RuntimeError("All Gemini models in the fallback rotation pool were completely exhausted.")
+
+async def run_gemini_broad_sweep(lead: LeadInput, progress_callback = None) -> str:
+    """
+    Step 1: Executes a broad web-search sweep via Gemini to gather overall details on the company.
     """
     log_step(1, "ENRICHMENT", f"Executing Gemini broad sweep for: {lead.company_name}")
     client = get_gemini_client()
@@ -46,20 +111,10 @@ async def run_gemini_broad_sweep(lead: LeadInput) -> str:
         
     prompt += "Return a highly detailed, professional factual profile. Keep it objective."
 
-    # Run in thread pool for maximum concurrency safety
-    loop = asyncio.get_event_loop()
-    response = await loop.run_in_executor(
-        None, 
-        lambda: client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())]
-            )
-        )
+    text = await generate_gemini_content_with_fallback(
+        client, prompt, search_grounding=True, progress_callback=progress_callback
     )
     
-    text = response.text or ""
     logger.debug(f"Gemini broad sweep finished. Length: {len(text)} characters.")
     log_step(1, "ENRICHMENT", f"Gemini broad sweep completed successfully.", "SUCCESS")
     return text
@@ -117,8 +172,7 @@ async def run_openai_prompt_generator(lead: LeadInput, broad_sweep: str, scraped
     log_step(3, "ENRICHMENT", "6 customized prompts synthesized successfully.", "SUCCESS")
     return result_json
 
-@gemini_retry_decorator("Gemini Single Category Sweep")
-async def run_gemini_category_sweep(category_name: str, query: str) -> str:
+async def run_gemini_category_sweep(category_name: str, query: str, progress_callback = None) -> str:
     """
     Sub-helper: Runs search grounding on a single targeted prompt.
     """
@@ -131,18 +185,9 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
         f"Provide a detailed, factual research summary. Cite specific names, statistics, and dates where available."
     )
     
-    loop = asyncio.get_event_loop()
-    response = await loop.run_in_executor(
-        None, 
-        lambda: client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                tools=[types.Tool(google_search=types.GoogleSearch())]
-            )
-        )
+    return await generate_gemini_content_with_fallback(
+        client, prompt, search_grounding=True, progress_callback=progress_callback
     )
-    return response.text or ""
 
 async def run_gemini_deep_research(custom_prompts: Dict[str, str], progress_callback = None) -> Dict[str, str]:
     """
@@ -174,7 +219,7 @@ async def run_gemini_deep_research(custom_prompts: Dict[str, str], progress_call
                 if progress_callback:
                     await progress_callback(f"Grounding Search: Querying Google Search for '{pretty_name}'...", "info")
                 
-                summary = await run_gemini_category_sweep(category, query)
+                summary = await run_gemini_category_sweep(category, query, progress_callback=progress_callback)
                 
                 log_step(4, "ENRICHMENT", f"Completed category sweep: {category}", "SUCCESS")
                 if progress_callback:

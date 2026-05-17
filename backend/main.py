@@ -131,16 +131,16 @@ async def submit_lead(lead: LeadInput):
                 event_queue.put_nowait(yield_event("running", "Step 2: Triggering Gemini 1.5 Pro Broad Search Sweep..."))
                 
                 try:
-                    # Step 2: Gemini Broad Sweep
-                    from backend.enrichment import run_gemini_broad_sweep, run_openai_prompt_generator, run_gemini_deep_research, run_openai_content_synthesis
-                    
-                    broad_sweep = await run_gemini_broad_sweep(lead)
-                    event_queue.put_nowait(yield_event("running", "Broad search sweep finished. Digital footprint mapped.", level="success", step_completed=2, step_active=3))
-                    await asyncio.sleep(0.5)
-                    
                     # Define live progress callback for nested operations
                     async def progress_callback(msg: str, lvl: str = "info"):
                         event_queue.put_nowait(yield_event("running", msg, level=lvl, step_active=4))
+
+                    # Step 2: Gemini Broad Sweep
+                    from backend.enrichment import run_gemini_broad_sweep, run_openai_prompt_generator, run_gemini_deep_research, run_openai_content_synthesis
+                    
+                    broad_sweep = await run_gemini_broad_sweep(lead, progress_callback)
+                    event_queue.put_nowait(yield_event("running", "Broad search sweep finished. Digital footprint mapped.", level="success", step_completed=2, step_active=3))
+                    await asyncio.sleep(0.5)
                     
                     # Step 3: GPT-4o Prompt Synthesis
                     event_queue.put_nowait(yield_event("running", "Step 3: Directing GPT-4o to analyze broad sweep data and construct 6 tailored queries..."))
