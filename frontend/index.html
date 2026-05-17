@@ -760,8 +760,85 @@
             }
         });
 
+        // =========================================================================
+        // LOCAL STORAGE FORM PERSISTENCE SYSTEM
+        // =========================================================================
+        const inputIds = [
+            "name",
+            "email",
+            "company_name",
+            "website",
+            "industry",
+            "company_size",
+            "linkedin_url",
+            "instagram_handle",
+            "additional_context"
+        ];
+
+        // Save current input state
+        function saveFormState() {
+            const state = {};
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    state[id] = el.value;
+                }
+            });
+            localStorage.setItem("lead_gen_form_state", JSON.stringify(state));
+        }
+
+        // Restore saved input state
+        function loadFormState() {
+            try {
+                const raw = localStorage.getItem("lead_gen_form_state");
+                if (raw) {
+                    const state = JSON.parse(raw);
+                    inputIds.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el && state[id] !== undefined) {
+                            el.value = state[id];
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to restore saved form state from localStorage:", err);
+            }
+        }
+
+        // Bind input and change listeners for real-time auto-saving
+        inputIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener("input", saveFormState);
+                el.addEventListener("change", saveFormState);
+            }
+        });
+
+        // Initialize state on page load
+        window.addEventListener("DOMContentLoaded", loadFormState);
+
         function resetApp() {
+            // Retrieve current identity credentials
+            const nameVal = document.getElementById("name").value;
+            const emailVal = document.getElementById("email").value;
+            
             leadForm.reset();
+            
+            // Clear localStorage but preserve personal credentials for fast successive submissions
+            const state = {
+                name: nameVal,
+                email: emailVal,
+                company_name: "",
+                website: "",
+                industry: "",
+                company_size: "",
+                linkedin_url: "",
+                instagram_handle: "",
+                additional_context: ""
+            };
+            localStorage.setItem("lead_gen_form_state", JSON.stringify(state));
+            loadFormState();
+            
             leadForm.style.display = "grid";
             visualizerPanel.style.display = "none";
             spinner.style.display = "inline-block";
@@ -769,3 +846,4 @@
     </script>
 </body>
 </html>
+
