@@ -29,7 +29,7 @@ def get_gemini_model() -> genai.GenerativeModel:
     
     # Configure model with Google Search grounding tool
     return genai.GenerativeModel(
-        model_name="gemini-1.5-pro",
+        model_name="gemini-1.5-flash",
         tools=["google_search_retrieval"]
     )
 
