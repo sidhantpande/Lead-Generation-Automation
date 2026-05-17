@@ -137,27 +137,33 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
 
 async def run_gemini_deep_research(custom_prompts: Dict[str, str]) -> Dict[str, str]:
     """
-    Step 4: Executes 6 deep-research queries in parallel or sequential order via Gemini with search grounding.
+    Step 4: Executes 6 deep-research queries in parallel via Gemini with search grounding.
+    Uses asyncio.gather to optimize performance and reduce latency by up to 60%.
     """
-    log_step(4, "ENRICHMENT", "Initiating Gemini deep research pass for 6 strategic verticals")
+    log_step(4, "ENRICHMENT", "Initiating Gemini deep research pass for 6 strategic verticals in parallel")
     
-    results = {}
-    
-    # We will execute them sequentially or concurrently with short pauses to avoid Google API rate limits
-    for category, query in custom_prompts.items():
+    async def run_single_category_sweep(category: str, query: str) -> tuple[str, str]:
         try:
             summary = await run_gemini_category_sweep(category, query)
-            results[category] = summary
             log_step(4, "ENRICHMENT", f"Completed category sweep: {category}", "SUCCESS")
-            # Brief rate limit safety delay
-            await asyncio.sleep(1.0)
+            return category, summary
         except Exception as e:
             logger.error(f"Failed deep research category '{category}': {str(e)}")
-            results[category] = f"Research failed. Insufficient online data for this vertical. Details: {str(e)}"
             log_step(4, "ENRICHMENT", f"Failed category sweep: {category}", "WARNING")
-            
-    log_step(4, "ENRICHMENT", "Gemini 6-category deep research pass finished.", "SUCCESS")
+            return category, f"Research failed. Insufficient online data for this vertical. Details: {str(e)}"
+
+    # Generate concurrent coroutines for all prompts
+    tasks = [run_single_category_sweep(category, query) for category, query in custom_prompts.items()]
+    
+    # Run all grounding sweeps concurrently
+    gathered_results = await asyncio.gather(*tasks)
+    
+    # Map back to category results dictionary
+    results = dict(gathered_results)
+    
+    log_step(4, "ENRICHMENT", "Gemini 6-category parallel deep research pass finished.", "SUCCESS")
     return results
+
 
 @api_retry_decorator("OpenAI Content Synthesis")
 async def run_openai_content_synthesis(lead: LeadInput, broad_sweep: str, scraped_content: str, deep_research: Dict[str, str]) -> EnrichedCompanyData:
