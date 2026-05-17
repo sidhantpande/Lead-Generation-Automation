@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SimplifIQ Corporate Business Intelligence Report</title>
+    <style>
+        /* CSS Imports and Page Settings */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+            @bottom-right {
+                content: "Page " counter(page);
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+            @bottom-left {
+                content: "SimplifIQ Assessment • Confidential Business Intelligence";
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #64748b;
+            }
+        }
+        
+        @page :first {
+            margin: 0;
+            @bottom-right { content: normal; }
+            @bottom-left { content: normal; }
+        }
+
+        /* General Document Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.6;
+            color: #1e293b;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            color: #0f172a;
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: 26pt;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 18pt;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+            margin-bottom: 15px;
+            color: #1e3a8a; /* Navy accent */
+        }
+
+        h3 {
+            font-size: 13pt;
+            font-weight: 600;
+            color: #b45309; /* Gold accent */
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        /* Helpers */
+        .page-break {
+            page-break-before: always;
+            break-before: page;
+        }
+
+        .container {
+            padding: 5px;
+        }
+
+        /* Cover Page Styling (Full Page Bleed) */
+        .cover-page {
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            color: #f8fafc;
+            padding: 30mm 20mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .cover-header {
+            margin-bottom: 30mm;
+        }
+
+        .cover-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 20pt;
+            font-weight: 700;
+            color: #f59e0b; /* Bright amber gold */
+            letter-spacing: 1px;
+        }
+
+        .cover-logo span {
+            color: #ffffff;
+        }
+
+        .cover-title-group {
+            margin-top: 40mm;
+            margin-bottom: 40mm;
+        }
+
+        .cover-subtitle {
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 9.5pt;
+            color: #fbbf24;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .cover-title {
+            font-size: 34pt;
+            font-weight: 700;
+            line-height: 1.15;
+            color: #ffffff;
+            margin: 0 0 15px 0;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .cover-divider {
+            width: 60mm;
+            height: 3px;
+            background-color: #fbbf24;
+            margin-bottom: 20px;
+        }
+
+        .cover-company {
+            font-size: 16pt;
+            font-weight: 300;
+            color: #e2e8f0;
+            margin: 0;
+        }
+
+        .cover-footer {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9pt;
+            color: #94a3b8;
+        }
+
+        /* Inside Header (shows on every page except cover) */
+        .inside-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+
+        .inside-header-logo {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        /* Stats Bar on Executive Summary */
+        .stats-bar {
+            background-color: #f8fafc;
+            border-left: 4px solid #b45309;
+            padding: 12px 18px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-val {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .stat-lbl {
+            font-size: 8pt;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            margin-top: 3px;
+        }
+
+        /* Cards/Lists Styling */
+        .pain-points-list {
+            margin-top: 15px;
+        }
+
+        .pain-point-item {
+            background-color: #fffbeb;
+            border-left: 4px solid #d97706;
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .pain-point-title {
+            font-weight: 600;
+            color: #92400e;
+            font-size: 11pt;
+            margin-bottom: 4px;
+        }
+
+        .pain-point-desc {
+            font-size: 9.5pt;
+            color: #78350f;
+            line-height: 1.5;
+            text-align: justify;
+        }
+
+        .recommendation-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .rec-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .rec-num {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 9pt;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        .rec-title {
+            font-size: 11.5pt;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .rec-body {
+            font-size: 9.5pt;
+            color: #334155;
+            line-height: 1.5;
+            margin: 0;
+            text-align: justify;
+        }
+
+        /* Closing Call to Action */
+        .cta-box {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 22px 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .cta-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 16pt;
+            color: #fbbf24;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .cta-text {
+            font-size: 10pt;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #fbbf24;
+            color: #0f172a;
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: 10pt;
+            text-decoration: none;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER PAGE -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="cover-logo">Simplif<span>IQ</span></div>
+        </div>
+        <div class="cover-title-group">
+            <div class="cover-subtitle">Strategic Intelligence Report</div>
+            <h1 class="cover-title">Business & Market<br>Intelligence Report</h1>
+            <div class="cover-divider"></div>
+            <p class="cover-company">Prepared for: <strong>{{ lead.company_name }}</strong></p>
+            <p style="color: #94a3b8; font-size: 10pt; margin-top: 10px;">Website: {{ lead.website }}</p>
+        </div>
+        <div class="cover-footer">
+            <div>DATE GENERATED: {{ date }}</div>
+            <div>STATUS: CONFIDENTIAL</div>
+        </div>
+    </div>
+
+    <!-- INSIDE PAGE HEADER HELPER -->
+    {% macro page_header(title) %}
+    <div class="inside-header">
+        <div>{{ lead.company_name }} — {{ title }}</div>
+        <div class="inside-header-logo">SimplifIQ</div>
+    </div>
+    {% endmacro %}
+
+    <!-- PAGE 2: EXECUTIVE SUMMARY -->
+    <div class="container">
+        {{ page_header("Executive Summary") }}
+        <h2>Executive Summary</h2>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-val">{{ lead.company_name }}</div>
+                <div class="stat-lbl">Target Brand</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">{{ lead.industry or 'Technology' }}</div>
+                <div class="stat-lbl">Industry Vertical</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">{{ lead.company_size or 'N/A' }}</div>
+                <div class="stat-lbl">Scale Segment</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.executive_summary.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 3: COMPANY PROFILE -->
+    <div class="page-break container">
+        {{ page_header("Company Profile") }}
+        <h2>Company Profile & Offerings</h2>
+        
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.company_profile.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 4: INDUSTRY LANDSCAPE -->
+    <div class="page-break container">
+        {{ page_header("Industry Landscape") }}
+        <h2>Industry & Market Landscape</h2>
+        
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.industry_landscape.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 5: COMPETITIVE POSITIONING -->
+    <div class="page-break container">
+        {{ page_header("Competitive Positioning") }}
+        <h2>Competitive Positioning</h2>
+        
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.competitive_positioning.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 6: BRAND & SOCIAL MEDIA -->
+    <div class="page-break container">
+        {{ page_header("Brand & Social Media Presence") }}
+        <h2>Brand & Social Presence</h2>
+        
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.social_media_analysis.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 7: GROWTH SIGNALS -->
+    <div class="page-break container">
+        {{ page_header("Growth Signals & Market Openings") }}
+        <h2>Growth Signals & Opportunities</h2>
+        
+        <div style="margin-top: 20px;">
+            {% for paragraph in report.growth_signals.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 8: IDENTIFIED CHALLENGES -->
+    <div class="page-break container">
+        {{ page_header("Operational Pain Points") }}
+        <h2>Identified Pain Points & operational Gaps</h2>
+        <p>Based on our multi-AI pipeline sweep and analysis of website structures and market trends, the following key challenges have been highlighted as critical growth constraints for {{ lead.company_name }}:</p>
+        
+        <div class="pain-points-list">
+            {% for point in report.pain_points %}
+                <div class="pain-point-item">
+                    <div class="pain-point-title">Challenge {{ loop.index }}: {{ point.split(':')[0] }}</div>
+                    <div class="pain-point-desc">
+                        {% if ':' in point %}
+                            {{ point.split(':')[1:] | join(':') | trim }}
+                        {% else %}
+                            {{ point }}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 9: STRATEGIC RECOMMENDATIONS -->
+    <div class="page-break container">
+        {{ page_header("Strategic Action Roadmap") }}
+        <h2>Strategic Recommendations</h2>
+        <p>To bypass market friction, close internal operational gaps, and accelerate corporate growth, our consultancy outlines the following immediate action roadmap:</p>
+        
+        <div style="margin-top: 15px;">
+            {% for rec in report.recommendations %}
+                <div class="recommendation-card">
+                    <div class="rec-header">
+                        <div class="rec-num">{{ loop.index }}</div>
+                        <h4 class="rec-title">{{ rec.title }}</h4>
+                    </div>
+                    <p class="rec-body">{{ rec.description }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- PAGE 10: CLOSING NOTE & CTA -->
+    <div class="page-break container">
+        {{ page_header("Consultancy Outro & CTA") }}
+        <h2>Next Steps & Action Roadmap</h2>
+        
+        <div style="margin-top: 20px; min-height: 100mm;">
+            {% for paragraph in report.closing_note.split('\n\n') %}
+                {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="cta-box">
+            <div class="cta-title">Ready to Accelerate Growth?</div>
+            <p class="cta-text">Leverage SimplifIQ's team of executive consultants to implement this custom strategic roadmap for {{ lead.company_name }}. Let's discuss detailed execution phases, tech integrations, and pricing.</p>
+            <a href="https://simplifiq.com/book-intelligence-consultation" class="cta-button">Schedule A Executive Consultation</a>
+        </div>
+    </div>
+
+</body>
+</html>
