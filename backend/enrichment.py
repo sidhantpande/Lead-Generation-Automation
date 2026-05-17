@@ -34,7 +34,15 @@ async def generate_gemini_content_with_fallback(
     If a model hits a 429 RESOURCE_EXHAUSTED daily quota or persistent rate limits,
     this function dynamically falls back to the next available model in the rotation pool.
     """
-    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+    models = [
+        "gemini-2.5-flash", 
+        "gemini-2.0-flash", 
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash-lite",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+        "gemini-2.5-pro"
+    ]
     
     config = types.GenerateContentConfig()
     if search_grounding:
