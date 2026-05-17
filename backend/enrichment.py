@@ -109,7 +109,10 @@ async def run_openai_prompt_generator(lead: LeadInput, broad_sweep: str, scraped
         temperature=0.3
     )
 
-    result_json = json.loads(response.choices[0].message.content)
+    raw_content = response.choices[0].message.content
+    if not raw_content:
+        raise ValueError("OpenAI synthesized prompts content was empty.")
+    result_json = json.loads(raw_content)
     logger.debug(f"OpenAI synthesized prompts: {json.dumps(result_json, indent=2)}")
     log_step(3, "ENRICHMENT", "6 customized prompts synthesized successfully.", "SUCCESS")
     return result_json
@@ -233,6 +236,8 @@ async def run_openai_content_synthesis(lead: LeadInput, broad_sweep: str, scrape
     )
 
     raw_json = response.choices[0].message.content
+    if not raw_json:
+        raise ValueError("OpenAI content synthesis response was empty.")
     logger.debug(f"OpenAI raw synthesis output: {raw_json}")
     
     # Parse and validate with Pydantic
