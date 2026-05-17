@@ -671,8 +671,13 @@
             setStepState(0, "active");
             
             try {
+                // Dynamically target the correct backend URL (supports file:// and Live Server origins)
+                const backendUrl = window.location.origin.includes(":8000") 
+                    ? "/api/submit" 
+                    : "http://localhost:8000/api/submit";
+
                 // Post form payload to the streaming API endpoint
-                const response = await fetch("/api/submit", {
+                const response = await fetch(backendUrl, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -734,7 +739,8 @@
                                 successBox.style.display = "block";
                                 
                                 // Set direct download action and Drive links
-                                btnDownload.href = `/api/download/${event.filename}`;
+                                const downloadBase = window.location.origin.includes(":8000") ? "" : "http://localhost:8000";
+                                btnDownload.href = `${downloadBase}/api/download/${event.filename}`;
                                 if (event.drive_link && event.drive_link !== "#") {
                                     btnDrive.href = event.drive_link;
                                     btnDrive.style.display = "inline-block";
