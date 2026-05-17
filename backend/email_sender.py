@@ -37,9 +37,9 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
         
     # 3. Create the MIMEMultipart message envelope
     msg = MIMEMultipart()
-    msg['From'] = f"SimplifIQ Intelligence <{settings.GMAIL_ADDRESS}>"
+    msg['From'] = f"Lead Intelligence <{settings.GMAIL_ADDRESS}>"
     msg['To'] = lead.email
-    msg['Subject'] = f"Your {lead.company_name} Intelligence Report — Prepared by SimplifIQ"
+    msg['Subject'] = f"Your {lead.company_name} Intelligence Report"
     
     # Premium styled HTML email body
     html_content = f"""
@@ -108,7 +108,7 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
     <body>
         <div class="container">
             <div class="header">
-                <h1 style="color: #fbbf24; margin: 0;">SimplifIQ</h1>
+                <h1 style="color: #fbbf24; margin: 0;">Lead Intelligence</h1>
             </div>
             <div class="content">
                 <p>Hello {lead.name},</p>
@@ -135,10 +135,10 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
                     <li>Immediate 5-Step Strategic Roadmap</li>
                 </ul>
                 
-                <p>We would love to hear your feedback on our findings and discuss how SimplifIQ can assist {lead.company_name} in implementing the recommendations outlined in the report.</p>
+                <p>We would love to hear your feedback on our findings and discuss how we can assist {lead.company_name} in implementing the recommendations outlined in the report.</p>
                 
                 <p>Best regards,<br>
-                <strong>The SimplifIQ Intelligence Team</strong></p>
+                <strong>The Lead Intelligence Team</strong></p>
             </div>
             <div class="footer">
                 <p>This is an automated analysis generated for {lead.company_name} ({lead.website}).<br>

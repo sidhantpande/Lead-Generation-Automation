@@ -1,6 +1,6 @@
 # Pipeline Architecture & Data Flow
 
-This document details the architectural layers and execution sequence of the **SimplifIQ Lead Intelligence Pipeline**.
+This document details the architectural layers and execution sequence of the **Lead Generation Automation Pipeline**.
 
 ---
 

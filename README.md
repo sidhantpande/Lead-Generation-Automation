@@ -1,12 +1,12 @@
-# SimplifIQ — Automated Lead Intelligence Pipeline
+# Lead Generation Automation Pipeline
 
-SimplifIQ is a premium, fully automated business intelligence and lead enrichment platform. When a prospect submits a lead, the system automatically scrapes their website, performs a broad multi-agent AI research sweep (using Gemini search grounding and OpenAI GPT-4o synthesis), compiles a professional A4 vector PDF report, and delivers it securely via Google Drive, Google Sheets, and Gmail SMTP.
+This is a premium, fully automated business intelligence and lead enrichment platform. When a prospect submits a lead, the system automatically scrapes their website, performs a broad multi-agent AI research sweep (using Gemini search grounding and OpenAI GPT-4o synthesis), compiles a professional A4 vector PDF report, and delivers it securely via Google Drive, Google Sheets, and Gmail SMTP.
 
 ---
 
 ## 🔗 Quick Guides
 
-To help you get set up and understand the inner workings of SimplifIQ, we have prepared two highly detailed, premium guides:
+To help you get set up and understand the inner workings of the system, we have prepared two highly detailed, premium guides:
 
 *   ### [🔑 Setup & Onboarding Guide (ONBOARDING.md)](ONBOARDING.md)
     *Detailed step-by-step instructions on how to acquire and configure all required credentials: OpenAI keys, Gemini keys, Gmail App Passwords, GCP Service Account JSON keys, Google Drive Folder IDs, and Google Sheets Database IDs.*

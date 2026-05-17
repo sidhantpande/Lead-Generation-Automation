@@ -1,6 +1,6 @@
 # Onboarding & Credentials Setup Guide
 
-Welcome to the **SimplifIQ Automated Lead Intelligence** workspace! This guide explains step-by-step how to acquire and configure all required credentials, keys, and tokens to run the pipeline successfully.
+Welcome to the **Automated Lead Intelligence** workspace! This guide explains step-by-step how to acquire and configure all required credentials, keys, and tokens to run the pipeline successfully.
 
 ---
 
@@ -10,7 +10,7 @@ Used for premium consulting copy synthesis and customized target prompt generati
 1. Navigate to the [OpenAI Developer Platform](https://platform.openai.com/).
 2. Sign in or create a developer account.
 3. Click on the **API Keys** tab on the left sidebar (under "Dashboard").
-4. Click **Create new secret key**, name it `SimplifIQ-Enrichment`, and click **Create**.
+4. Click **Create new secret key**, name it `Lead-Generation-Enrichment`, and click **Create**.
 5. Copy the secret key (`sk-proj-...`) immediately and paste it into your `.env` file under `OPENAI_API_KEY`.
 
 ---
@@ -36,7 +36,7 @@ Used for cost-free SMTP email dispatch with PDF attachments directly from your G
 
 ### Step 3.2: Generate the 16-Character App Password
 1. In the **2-Step Verification** details page, scroll to the bottom and click on **App passwords** (or search "App passwords" in the top account search bar).
-2. Enter a name for the app (e.g., `SimplifIQ Lead Gen`) and click **Create**.
+2. Enter a name for the app (e.g., `Lead Generation Automation`) and click **Create**.
 3. A popup will reveal a **16-character code** (e.g., `byft slti bkaz xjxw`). Copy this code.
 4. Paste your values into `.env`:
    - `GMAIL_ADDRESS=your_email@gmail.com`
@@ -55,7 +55,7 @@ Allows the backend to securely upload PDFs and append row logs without prompting
    - **Google Sheets API**
 4. Navigate to **IAM & Admin** > **Service Accounts** on the left sidebar.
 5. Click **Create Service Account** at the top.
-6. Name it (e.g., `simplifiq-database`), click **Create and Continue**, skip optional role selection, and click **Done**.
+6. Name it (e.g., `lead-gen-database`), click **Create and Continue**, skip optional role selection, and click **Done**.
 
 ### Step 4.2: Generate the JSON Credentials Key
 1. Click on the newly created Service Account email from the list.
@@ -71,7 +71,7 @@ Allows the backend to securely upload PDFs and append row logs without prompting
 The folder where your PDF reports are stored and shared publicly.
 
 1. Open [Google Drive](https://drive.google.com/).
-2. Create a new folder (e.g., `SimplifIQ Reports`).
+2. Create a new folder (e.g., `Lead Intelligence Reports`).
 3. Double-click to enter the folder. Look at the URL in your browser:
    `https://drive.google.com/drive/folders/1koijIFFIeHq3H561mwP0eMJfsO_WHzvY`
 4. Copy the alphanumeric string at the very end of the URL (e.g., `1koijIFFIeHq3H561mwP0eMJfsO_WHzvY`). This is your **GOOGLE_DRIVE_FOLDER_ID**.

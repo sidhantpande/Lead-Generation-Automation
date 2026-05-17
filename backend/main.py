@@ -19,7 +19,7 @@ from backend.drive_uploader import upload_pdf_to_drive
 from backend.sheets_logger import log_lead_to_sheets
 from backend.email_sender import send_report_email
 
-app = FastAPI(title="SimplifIQ Lead Intelligence Server", version="1.0.0")
+app = FastAPI(title="Lead Generation Automation Server", version="1.0.0")
 
 # Setup folder directories
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
