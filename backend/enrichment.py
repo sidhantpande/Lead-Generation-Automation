@@ -2,6 +2,10 @@ import json
 import asyncio
 from typing import Dict, Any, List
 from openai import AsyncOpenAI
+import warnings
+# Suppress legacy package End-of-Support FutureWarning warnings to keep clean startup logs
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 import google.generativeai as genai
 from google.generativeai.types import GenerateContentResponse
 
@@ -26,7 +30,7 @@ def get_gemini_model() -> genai.GenerativeModel:
     # Configure model with Google Search grounding tool
     return genai.GenerativeModel(
         model_name="gemini-1.5-pro",
-        tools=[{"google_search": {}}]
+        tools=["google_search_retrieval"]
     )
 
 @api_retry_decorator("Gemini Broad Sweep")
