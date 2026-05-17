@@ -2,12 +2,8 @@ import json
 import asyncio
 from typing import Dict, Any, List
 from openai import AsyncOpenAI
-import warnings
-# Suppress legacy package End-of-Support FutureWarning warnings to keep clean startup logs
-warnings.filterwarnings("ignore", category=FutureWarning)
-
-import google.generativeai as genai
-from google.generativeai.types import GenerateContentResponse
+from google import genai
+from google.genai import types
 
 from backend.config import settings
 from backend.utils.logger import log_step, logger
@@ -21,17 +17,11 @@ def get_openai_client() -> AsyncOpenAI:
         raise ValueError("Missing OPENAI_API_KEY. Configure it in your .env file.")
     return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-# Configure Gemini
-def get_gemini_model() -> genai.GenerativeModel:
+# Configure Gemini Client
+def get_gemini_client() -> genai.Client:
     if not settings.GEMINI_API_KEY:
         raise ValueError("Missing GEMINI_API_KEY. Configure it in your .env file.")
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    
-    # Configure model with Google Search grounding tool
-    return genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        tools=["google_search_retrieval"]
-    )
+    return genai.Client(api_key=settings.GEMINI_API_KEY)
 
 @api_retry_decorator("Gemini Broad Sweep")
 async def run_gemini_broad_sweep(lead: LeadInput) -> str:
@@ -39,7 +29,7 @@ async def run_gemini_broad_sweep(lead: LeadInput) -> str:
     Step 1: Executes a broad web-search sweep via Gemini 1.5 Pro to gather overall details on the company.
     """
     log_step(1, "ENRICHMENT", f"Executing Gemini broad sweep for: {lead.company_name}")
-    model = get_gemini_model()
+    client = get_gemini_client()
     
     prompt = (
         f"Research the company '{lead.company_name}' with website {lead.website}.\n"
@@ -56,11 +46,17 @@ async def run_gemini_broad_sweep(lead: LeadInput) -> str:
         
     prompt += "Return a highly detailed, professional factual profile. Keep it objective."
 
-    # Run in thread pool since generativeai SDK is synchronous
+    # Run in thread pool for maximum concurrency safety
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(
         None, 
-        lambda: model.generate_content(prompt)
+        lambda: client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
     )
     
     text = response.text
@@ -127,7 +123,7 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
     Sub-helper: Runs search grounding on a single targeted prompt.
     """
     logger.info(f"Gemini deep research starting for category '{category_name}' with query: '{query}'")
-    model = get_gemini_model()
+    client = get_gemini_client()
     
     prompt = (
         f"Using Google Search grounding, execute this targeted research query:\n"
@@ -138,7 +134,13 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(
         None, 
-        lambda: model.generate_content(prompt)
+        lambda: client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())]
+            )
+        )
     )
     return response.text
 
