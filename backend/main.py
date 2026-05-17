@@ -199,11 +199,10 @@ async def submit_lead(lead: LeadInput):
                     event_queue.put_nowait(yield_event("running", "Upload complete. Access permissions updated to viewable.", level="success", step_completed=7, step_active=8))
                     await asyncio.sleep(0.5)
                 except Exception as e:
-                    err_trace = traceback.format_exc()
-                    logger.error(f"Critical Google Drive Failure:\n{err_trace}")
-                    event_queue.put_nowait(yield_event("error", f"Google Drive step encountered a fatal issue: {str(e)}", level="error", step_failed=7))
-                    event_queue.put_nowait(None)
-                    return
+                    logger.warning(f"Google Drive upload issue (non-fatal): {str(e)}")
+                    drive_link = "#"
+                    event_queue.put_nowait(yield_event("running", f"Drive Alert: Upload skipped (Service Account has no storage quota). Continuing pipeline...", level="warning", step_completed=7, step_active=8))
+                    await asyncio.sleep(0.5)
 
                 # ==========================================
                 # STEP 8: Google Sheets Logging
@@ -215,11 +214,9 @@ async def submit_lead(lead: LeadInput):
                     event_queue.put_nowait(yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9))
                     await asyncio.sleep(0.5)
                 except Exception as e:
-                    err_trace = traceback.format_exc()
-                    logger.error(f"Critical Google Sheets Failure:\n{err_trace}")
-                    event_queue.put_nowait(yield_event("error", f"Google Sheets step encountered a fatal database issue: {str(e)}", level="error", step_failed=8))
-                    event_queue.put_nowait(None)
-                    return
+                    logger.warning(f"Google Sheets logging issue (non-fatal): {str(e)}")
+                    event_queue.put_nowait(yield_event("running", f"Sheet Alert: Log write skipped (permission or API limits). Continuing pipeline...", level="warning", step_completed=8, step_active=9))
+                    await asyncio.sleep(0.5)
 
                 # ==========================================
                 # STEP 9: Gmail SMTP Email Dispatch

@@ -57,7 +57,8 @@ def upload_pdf_to_drive(pdf_path: Path, company_name: str) -> str:
     drive_file = service.files().create(
         body=file_metadata,
         media_body=media,
-        fields="id, webViewLink"
+        fields="id, webViewLink",
+        supportsAllDrives=True
     ).execute()
     
     file_id = drive_file.get("id")
@@ -74,7 +75,8 @@ def upload_pdf_to_drive(pdf_path: Path, company_name: str) -> str:
     
     service.permissions().create(
         fileId=file_id,
-        body=user_permission
+        body=user_permission,
+        supportsAllDrives=True
     ).execute()
     
     log_step(7, "DRIVE_UPLOADER", f"Successfully uploaded PDF. Public URL: {web_link}", "SUCCESS")
