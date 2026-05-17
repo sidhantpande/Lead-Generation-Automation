@@ -59,7 +59,7 @@ async def run_gemini_broad_sweep(lead: LeadInput) -> str:
         )
     )
     
-    text = response.text
+    text = response.text or ""
     logger.debug(f"Gemini broad sweep finished. Length: {len(text)} characters.")
     log_step(1, "ENRICHMENT", f"Gemini broad sweep completed successfully.", "SUCCESS")
     return text
@@ -142,7 +142,7 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
             )
         )
     )
-    return response.text
+    return response.text or ""
 
 async def run_gemini_deep_research(custom_prompts: Dict[str, str]) -> Dict[str, str]:
     """
