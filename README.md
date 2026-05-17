@@ -1,16 +1,18 @@
 # SimplifIQ — Automated Lead Intelligence Pipeline
 
-A fully automated business intelligence and lead enrichment pipeline. When a prospect submits a lead, the system:
-1. Validates input values & active API credentials.
-2. Performs a deep scrape on the company homepage and primary sub-pages.
-3. Maps their digital footprint using a broad Gemini 1.5 Pro search sweep.
-4. Generates customized, targeted research prompts using GPT-4o.
-5. Executes deep search grounding sweeps across 6 core corporate verticals.
-6. Synthesizes professional executive consult copy via GPT-4o.
-7. Compiles the report layout into a gorgeous A4 vector PDF.
-8. Uploads the report to a Google Drive folder with public share settings.
-9. Database-logs the lead row in Google Sheets.
-10. Delivers the PDF report as an email attachment and public link using Resend.
+SimplifIQ is a premium, fully automated business intelligence and lead enrichment platform. When a prospect submits a lead, the system automatically scrapes their website, performs a broad multi-agent AI research sweep (using Gemini search grounding and OpenAI GPT-4o synthesis), compiles a professional A4 vector PDF report, and delivers it securely via Google Drive, Google Sheets, and Gmail SMTP.
+
+---
+
+## 🔗 Quick Guides
+
+To help you get set up and understand the inner workings of SimplifIQ, we have prepared two highly detailed, premium guides:
+
+*   ### [🔑 Setup & Onboarding Guide (ONBOARDING.md)](ONBOARDING.md)
+    *Detailed step-by-step instructions on how to acquire and configure all required credentials: OpenAI keys, Gemini keys, Gmail App Passwords, GCP Service Account JSON keys, Google Drive Folder IDs, and Google Sheets Database IDs.*
+
+*   ### [⚙️ Pipeline Architecture & Data Flow (PIPELINE.md)](PIPELINE.md)
+    *A comprehensive deep-dive into the technical layers, data models, web scrapers, multi-AI grounding sweeps, dual-engine PDF compilers, and SMTP delivery pipelines (featuring a full Mermaid architecture diagram).*
 
 ---
 
@@ -20,7 +22,7 @@ A fully automated business intelligence and lead enrichment pipeline. When a pro
 Lead-Generation-automation/
 │
 ├── backend/
-│   ├── main.py                  # FastAPI router, serving pages and streams
+│   ├── main.py                  # FastAPI router, serving pages and NDJSON streams
 │   ├── config.py                # Environment setting loader and validator
 │   ├── models.py                # Pydantic schemas (LeadInput, EnrichedCompanyData)
 │   ├── scraper.py               # Asynchronous HTTP & Playwright scraper fallback
@@ -28,7 +30,7 @@ Lead-Generation-automation/
 │   ├── pdf_generator.py         # Jinja2 rendering & Playwright PDF compile fallback
 │   ├── drive_uploader.py        # Google Drive Service Account uploader
 │   ├── sheets_logger.py         # Google Sheets Service Account database logger
-│   ├── email_sender.py          # Resend attachment dispatch sender
+│   ├── email_sender.py          # SMTP Gmail App Password delivery dispatch
 │   │
 │   └── utils/
 │       ├── logger.py            # loguru formatted console & file logger
@@ -42,19 +44,22 @@ Lead-Generation-automation/
 │   └── report.html              # Custom Jinja2 styling sheet template for PDF A4
 │
 ├── outputs/                     # Local temporary storage for generated PDFs
-├── credentials/                 # Put google service_account.json here
+├── credentials/                 # Put Google service_account.json here
 ├── logs/                        # Rolled pipeline log files
 │
-├── requirements.txt             # Core python dependency pins
+├── requirements.txt             # Core Python dependency pins
 ├── .env                         # Environment variables (API Keys)
-└── README.md                    # This instructions guide
+│
+├── ONBOARDING.md                # Credentials Retrieval Guide
+├── PIPELINE.md                  # Pipeline Architecture Document
+└── README.md                    # Main landing page
 ```
 
 ---
 
-## 🛠️ Installation & Setup
+## 🛠️ Quick Installation
 
-1. **Step 1: Create local virtual environment and install packages**
+1. **Step 1: Create a local virtual environment and install packages**
    ```bash
    python3 -m venv venv
    source venv/bin/activate
@@ -67,17 +72,18 @@ Lead-Generation-automation/
      ```env
      OPENAI_API_KEY=sk-proj-...
      GEMINI_API_KEY=AIzaSy...
-     RESEND_API_KEY=re_...
+     GMAIL_ADDRESS=you@gmail.com
+     GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
      GOOGLE_DRIVE_FOLDER_ID=your_drive_folder_id
      GOOGLE_SHEET_ID=your_sheets_id
      ```
-   - Share your targeted Google Drive Folder and Google Sheet with your Google Service Account email as **Editor**.
-   - Download the Service Account JSON key from your GCP console and save it under:
+   - Place your Google Service Account key in:
      `credentials/service_account.json`
+   - Review [ONBOARDING.md](ONBOARDING.md) for full credential retrieval steps.
 
 ---
 
-## 🚀 Running the Pipeline
+## 🚀 Running the Server
 
 To boot up the local FastAPI server:
 ```bash
