@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplifIQ — Lead Intelligence Pipeline</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #fbbf24;
+            --primary-hover: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-red: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(30, 27, 75, 0.4) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.6) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Container */
+        .app-container {
+            width: 100%;
+            max-width: 850px;
+            perspective: 1000px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        header h1 span {
+            color: var(--primary);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Card Setup */
+        .glass-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Forms Layout */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 680px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 680px) {
+            .full-width {
+                grid-column: span 1;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .form-group label span.required {
+            color: var(--accent-red);
+        }
+
+        .form-control {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        textarea.form-control {
+            resize: none;
+            min-height: 100px;
+        }
+
+        /* Buttons */
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, #d97706 100%);
+            color: #0b0f19;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 28px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.35);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Step Visualizer Panel */
+        .visualizer-panel {
+            display: none;
+        }
+
+        .panel-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: -15px;
+            margin-bottom: 25px;
+        }
+
+        /* Progress Steps */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            background: rgba(15, 23, 42, 0.4);
+            flex-shrink: 0;
+        }
+
+        .step-label {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        /* Active / Success / Failure Row States */
+        .step-row.active .step-icon {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+            animation: pulse-border 1.5s infinite;
+        }
+
+        .step-row.active .step-label {
+            color: #ffffff;
+        }
+
+        .step-row.completed .step-icon {
+            border-color: var(--accent-green);
+            background-color: rgba(52, 211, 153, 0.1);
+            color: var(--accent-green);
+        }
+
+        .step-row.completed .step-label {
+            color: #e2e8f0;
+        }
+
+        .step-row.failed .step-icon {
+            border-color: var(--accent-red);
+            background-color: rgba(248, 113, 113, 0.1);
+            color: var(--accent-red);
+        }
+
+        .step-row.failed .step-label {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        /* Console Terminal Output */
+        .terminal-box {
+            background-color: #070913;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: #a7f3d0;
+            height: 160px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .terminal-line {
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .terminal-line.error { color: var(--accent-red); }
+        .terminal-line.warning { color: var(--primary); }
+        .terminal-line.success { color: var(--accent-green); }
+        .terminal-line.info { color: #93c5fd; }
+
+        /* Output Card Actions */
+        .success-box {
+            display: none;
+            background: rgba(52, 211, 153, 0.08);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            animation: slide-up 0.5s ease-out;
+        }
+
+        .success-box h3 {
+            color: var(--accent-green);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .success-box p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary-action {
+            background-color: var(--primary);
+            color: #0b0f19;
+            border: none;
+        }
+
+        .btn-primary-action:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary-action {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+        }
+
+        .btn-secondary-action:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Error Panel */
+        .error-box {
+            display: none;
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            animation: slide-up 0.5s ease-out;
+        }
+
+        .error-box h3 {
+            color: var(--accent-red);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .error-body {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #cbd5e1;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Fira Code', monospace;
+            border-left: 3px solid var(--accent-red);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Animations */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+        }
+
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Simplif<span>IQ</span></h1>
+            <p>Automated Lead Intelligence & Executive Audit Pipeline</p>
+        </header>
+
+        <div class="glass-card">
+            
+            <!-- FORM STEP -->
+            <form id="leadForm" class="form-grid">
+                
+                <div class="form-group">
+                    <label for="name">Full Name <span class="required">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="John Doe" required minlength="2">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Work Email <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="john@acme.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="company_name">Company Name <span class="required">*</span></label>
+                    <input type="text" id="company_name" name="company_name" class="form-control" placeholder="Acme Corp" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="website">Company Website <span class="required">*</span></label>
+                    <input type="text" id="website" name="website" class="form-control" placeholder="acme.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="industry">Industry Vertical</label>
+                    <select id="industry" name="industry" class="form-control">
+                        <option value="">Select Industry...</option>
+                        <option value="SaaS / Software">SaaS / Software</option>
+                        <option value="Finance & Fintech">Finance & Fintech</option>
+                        <option value="Consulting & Advisory">Consulting & Advisory</option>
+                        <option value="E-commerce & Retail">E-commerce & Retail</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education / EdTech">Education / EdTech</option>
+                        <option value="Real Estate">Real Estate</option>
+                        <option value="Marketing & Advertising">Marketing & Advertising</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Legal Services">Legal Services</option>
+                        <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+                        <option value="Media & Entertainment">Media & Entertainment</option>
+                        <option value="Non-Profit">Non-Profit</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="company_size">Company Size</label>
+                    <select id="company_size" name="company_size" class="form-control">
+                        <option value="">Select Size...</option>
+                        <option value="1-10">1-10 employees</option>
+                        <option value="11-50">11-50 employees</option>
+                        <option value="51-200">51-200 employees</option>
+                        <option value="200+">200+ employees</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="linkedin_url">LinkedIn Company URL</label>
+                    <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" placeholder="https://linkedin.com/company/acme">
+                </div>
+
+                <div class="form-group">
+                    <label for="instagram_handle">Instagram Handle</label>
+                    <input type="text" id="instagram_handle" name="instagram_handle" class="form-control" placeholder="@acme">
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="additional_context">Additional Corporate Context</label>
+                    <textarea id="additional_context" name="additional_context" class="form-control" placeholder="Share specific goals, pain points or focus areas for this audit report..."></textarea>
+                </div>
+
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <button type="submit" class="btn-submit">Trigger Intelligence Audit</button>
+                </div>
+            </form>
+
+            <!-- PIPELINE VISUALIZER STEP -->
+            <div id="visualizerPanel" class="visualizer-panel">
+                <div class="panel-title">
+                    <span>Audit Pipeline Execution</span>
+                    <span id="spinner" style="font-size: 1rem; color: var(--primary);">⚙️ Running...</span>
+                </div>
+                <div class="panel-subtitle" id="executionSubtitle">Initializing security validations and loading config parameters...</div>
+                
+                <!-- Steps Progress List -->
+                <div class="steps-container">
+                    <div class="step-row" id="step-0">
+                        <div class="step-icon">1</div>
+                        <div class="step-label">Validating Form Data & Environment Configurations</div>
+                    </div>
+                    <div class="step-row" id="step-1">
+                        <div class="step-icon">2</div>
+                        <div class="step-label">Direct Website Scraping (Homepage & Sub-pages)</div>
+                    </div>
+                    <div class="step-row" id="step-2">
+                        <div class="step-icon">3</div>
+                        <div class="step-label">Gemini Broad Search Sweep & Online Profile Mapping</div>
+                    </div>
+                    <div class="step-row" id="step-3">
+                        <div class="step-icon">4</div>
+                        <div class="step-label">GPT-4o Custom Search Prompt Synthesis</div>
+                    </div>
+                    <div class="step-row" id="step-4">
+                        <div class="step-icon">5</div>
+                        <div class="step-label">Gemini 6-Category Deep Search Grounds Sweeps</div>
+                    </div>
+                    <div class="step-row" id="step-5">
+                        <div class="step-icon">6</div>
+                        <div class="step-label">GPT-4o Consultant-Grade Copy Compilation</div>
+                    </div>
+                    <div class="step-row" id="step-6">
+                        <div class="step-icon">7</div>
+                        <div class="step-label">Compiling Jinja2 report.html to A4 PDF document</div>
+                    </div>
+                    <div class="step-row" id="step-7">
+                        <div class="step-icon">8</div>
+                        <div class="step-label">Uploading Report to Google Drive & Setting Public View</div>
+                    </div>
+                    <div class="step-row" id="step-8">
+                        <div class="step-icon">9</div>
+                        <div class="step-label">Appending Leads record row in Google Sheets database</div>
+                    </div>
+                    <div class="step-row" id="step-9">
+                        <div class="step-icon">10</div>
+                        <div class="step-label">Dispatching Rich HTML email with PDF attached via Resend</div>
+                    </div>
+                </div>
+
+                <!-- Live Logs Terminal -->
+                <div class="terminal-box" id="terminal">
+                    <div class="terminal-line info">Ready to initialize stream logs...</div>
+                </div>
+                <div style="margin-top: 15px; text-align: right; font-size: 0.75rem; color: var(--text-muted);">
+                    Scroll terminal window to inspect detailed logs.
+                </div>
+                
+                <!-- Success State Overlay -->
+                <div id="successBox" class="success-box">
+                    <h3>Pipeline Completed Successfully!</h3>
+                    <p id="successDesc">Your 10-page premium executive intelligence audit has been prepared, saved to Google Drive, logged to Sheets, and emailed to your address.</p>
+                    <div class="action-buttons">
+                        <a id="btnDownload" href="#" class="btn-action btn-primary-action" download>Download PDF Report</a>
+                        <a id="btnDrive" href="#" target="_blank" class="btn-action btn-secondary-action">View In Google Drive</a>
+                        <button onclick="resetApp()" class="btn-action btn-secondary-action">Submit Another Lead</button>
+                    </div>
+                </div>
+
+                <!-- Error State Overlay -->
+                <div id="errorBox" class="error-box">
+                    <h3>Pipeline Execution Halted</h3>
+                    <div class="error-body" id="errorBody">Error details goes here...</div>
+                    <div class="action-buttons">
+                        <button onclick="resetApp()" class="btn-action btn-primary-action" style="max-width: 250px;">Return To Input Form</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const leadForm = document.getElementById("leadForm");
+        const visualizerPanel = document.getElementById("visualizerPanel");
+        const terminal = document.getElementById("terminal");
+        const successBox = document.getElementById("successBox");
+        const errorBox = document.getElementById("errorBox");
+        const btnDownload = document.getElementById("btnDownload");
+        const btnDrive = document.getElementById("btnDrive");
+        const spinner = document.getElementById("spinner");
+
+        // Simple function to append terminal output
+        function printLog(message, level = "info") {
+            const line = document.createElement("div");
+            line.className = `terminal-line ${level.toLowerCase()}`;
+            
+            // Format timestamps or levels nicely
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function setStepState(stepIndex, state) {
+            const row = document.getElementById(`step-${stepIndex}`);
+            if (!row) return;
+            
+            // Clean up previous classes
+            row.classList.remove("active", "completed", "failed");
+            
+            if (state === "active") {
+                row.classList.add("active");
+            } else if (state === "completed") {
+                row.classList.add("completed");
+                const icon = row.querySelector(".step-icon");
+                icon.textContent = "✓";
+            } else if (state === "failed") {
+                row.classList.add("failed");
+                const icon = row.querySelector(".step-icon");
+                icon.textContent = "✗";
+            }
+        }
+
+        function resetSteps() {
+            for (let i = 0; i <= 9; i++) {
+                const row = document.getElementById(`step-${i}`);
+                if (row) {
+                    row.classList.remove("active", "completed", "failed");
+                    const icon = row.querySelector(".step-icon");
+                    icon.textContent = (i + 1).toString();
+                }
+            }
+        }
+
+        leadForm.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            
+            // Form validations
+            if (!leadForm.checkValidity()) return;
+
+            // Form data retrieval
+            const formData = {
+                name: document.getElementById("name").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                company_name: document.getElementById("company_name").value.trim(),
+                website: document.getElementById("website").value.trim(),
+                linkedin_url: document.getElementById("linkedin_url").value.trim() || null,
+                instagram_handle: document.getElementById("instagram_handle").value.trim() || null,
+                industry: document.getElementById("industry").value || null,
+                company_size: document.getElementById("company_size").value || null,
+                additional_context: document.getElementById("additional_context").value.trim() || null
+            };
+
+            // Switch views
+            leadForm.style.display = "none";
+            visualizerPanel.style.display = "block";
+            successBox.style.display = "none";
+            errorBox.style.display = "none";
+            terminal.innerHTML = "";
+            resetSteps();
+            
+            printLog("Validating form values and initializing secure network pipeline...", "info");
+            setStepState(0, "active");
+            
+            try {
+                // Post form payload to the streaming API endpoint
+                const response = await fetch("/api/submit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    // Check if response is JSON error
+                    const errData = await response.json();
+                    throw new Error(errData.detail || `Server returned HTTP status ${response.status}`);
+                }
+
+                // Read body Stream reader
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // Split lines as separate JSON events
+                    const lines = buffer.split("\n");
+                    // Keep the last partial line in the buffer
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        
+                        try {
+                            const event = JSON.parse(line);
+                            
+                            // 1. Log to visual Terminal box
+                            printLog(event.message, event.level || "info");
+                            
+                            // 2. Handle Step transitions
+                            if (event.step_completed !== undefined) {
+                                setStepState(event.step_completed, "completed");
+                            }
+                            if (event.step_active !== undefined) {
+                                setStepState(event.step_active, "active");
+                            }
+                            
+                            // 3. Handle End States
+                            if (event.status === "success") {
+                                setStepState(9, "completed");
+                                spinner.style.display = "none";
+                                successBox.style.display = "block";
+                                
+                                // Set direct download action and Drive links
+                                btnDownload.href = `/api/download/${event.filename}`;
+                                if (event.drive_link && event.drive_link !== "#") {
+                                    btnDrive.href = event.drive_link;
+                                    btnDrive.style.display = "inline-block";
+                                } else {
+                                    btnDrive.style.display = "none";
+                                }
+                                
+                                document.getElementById("successDesc").textContent = 
+                                    `Your custom 10-page executive intelligence audit for ${formData.company_name} has been processed successfully. PDF generated locally and shared!`;
+                                return; // Stop processing stream
+                            }
+                            
+                            if (event.status === "error") {
+                                if (event.step_failed !== undefined) {
+                                    setStepState(event.step_failed, "failed");
+                                }
+                                throw new Error(event.message);
+                            }
+                            
+                        } catch (jsonErr) {
+                            console.error("Failed to parse stream chunk:", line, jsonErr);
+                        }
+                    }
+                }
+                
+            } catch (err) {
+                spinner.style.display = "none";
+                errorBox.style.display = "block";
+                document.getElementById("errorBody").textContent = err.message || "An unexpected network disruption occurred during pipeline execution.";
+                printLog(`[FATAL PIPELINE HALT] ${err.message}`, "error");
+            }
+        });
+
+        function resetApp() {
+            leadForm.reset();
+            leadForm.style.display = "grid";
+            visualizerPanel.style.display = "none";
+            spinner.style.display = "inline-block";
+        }
+    </script>
+</body>
+</html>
