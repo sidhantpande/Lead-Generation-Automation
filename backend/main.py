@@ -19,7 +19,17 @@ from backend.drive_uploader import upload_pdf_to_drive
 from backend.sheets_logger import log_lead_to_sheets
 from backend.email_sender import send_report_email
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Lead Generation Automation Server", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Setup folder directories
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
