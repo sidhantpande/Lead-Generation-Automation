@@ -2,11 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Lead Generation Automation Report</title>
+    <title>{{ lead.company_name }} — Strategic Business Intelligence Report</title>
     <style>
         /* CSS Imports and Page Settings */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap');
         
+        :root {
+            --primary: #0f172a;
+            --primary-light: #1e293b;
+            --accent: #d97706;
+            --accent-gold: #fbbf24;
+            --secondary: #2563eb;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-500: #64748b;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --border-color: #e2e8f0;
+        }
+
         @page {
             size: A4;
             margin: 20mm 15mm 20mm 15mm;
@@ -15,12 +31,14 @@
                 font-family: 'Inter', sans-serif;
                 font-size: 8pt;
                 color: #64748b;
+                font-weight: 500;
             }
             @bottom-left {
-                content: "Lead Generation Automation Assessment • Confidential Business Intelligence";
+                content: "SimplifIQ Strategic Intelligence • Confidential Business Assessment";
                 font-family: 'Inter', sans-serif;
                 font-size: 8pt;
                 color: #64748b;
+                font-weight: 500;
             }
         }
         
@@ -33,9 +51,9 @@
         /* General Document Styles */
         body {
             font-family: 'Inter', sans-serif;
-            font-size: 10.5pt;
-            line-height: 1.6;
-            color: #1e293b;
+            font-size: 10pt;
+            line-height: 1.65;
+            color: var(--slate-700);
             background-color: #ffffff;
             margin: 0;
             padding: 0;
@@ -45,34 +63,47 @@
 
         h1, h2, h3, h4 {
             font-family: 'Playfair Display', serif;
-            color: #0f172a;
+            color: var(--primary);
             margin-top: 0;
         }
 
         h1 {
-            font-size: 26pt;
+            font-size: 28pt;
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         h2 {
             font-size: 18pt;
             font-weight: 600;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 6px;
-            margin-bottom: 15px;
-            color: #1e3a8a; /* Navy accent */
+            border-bottom: 2px solid var(--slate-200);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            color: var(--primary-light);
+            letter-spacing: -0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        h2::after {
+            content: "";
+            width: 50px;
+            height: 3px;
+            background-color: var(--accent);
+            display: block;
+            margin-bottom: -2.5px;
         }
 
         h3 {
             font-size: 13pt;
             font-weight: 600;
-            color: #b45309; /* Gold accent */
-            margin-bottom: 10px;
+            color: var(--accent);
+            margin-bottom: 12px;
         }
 
         p {
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             text-align: justify;
         }
 
@@ -91,235 +122,492 @@
             width: 210mm;
             height: 297mm;
             box-sizing: border-box;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            background: radial-gradient(circle at 80% 20%, rgba(30, 27, 75, 0.15) 0%, transparent 50%),
+                        linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e1b4b 100%);
             color: #f8fafc;
-            padding: 30mm 20mm;
+            padding: 35mm 25mm 25mm 25mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             page-break-after: always;
             break-after: page;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative geometric background elements */
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 300mm;
+            height: 300mm;
+            border: 1px solid rgba(251, 191, 36, 0.05);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .cover-page::after {
+            content: "";
+            position: absolute;
+            bottom: -50mm;
+            left: -50mm;
+            width: 150mm;
+            height: 150mm;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .cover-header {
-            margin-bottom: 30mm;
+            margin-bottom: 20mm;
+            z-index: 10;
         }
 
         .cover-logo {
             font-family: 'Playfair Display', serif;
-            font-size: 20pt;
+            font-size: 24pt;
             font-weight: 700;
-            color: #f59e0b; /* Bright amber gold */
-            letter-spacing: 1px;
+            color: var(--accent-gold);
+            letter-spacing: 1.5px;
         }
 
         .cover-logo span {
             color: #ffffff;
+            font-weight: 300;
         }
 
         .cover-title-group {
-            margin-top: 40mm;
-            margin-bottom: 40mm;
+            margin-top: 25mm;
+            margin-bottom: 25mm;
+            z-index: 10;
         }
 
         .cover-subtitle {
             font-family: 'Inter', sans-serif;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            font-size: 9.5pt;
-            color: #fbbf24;
+            letter-spacing: 4px;
+            font-size: 10pt;
+            color: var(--accent-gold);
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .cover-title {
-            font-size: 34pt;
+            font-size: 36pt;
             font-weight: 700;
             line-height: 1.15;
             color: #ffffff;
-            margin: 0 0 15px 0;
-            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            margin: 0 0 25px 0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            letter-spacing: -1px;
         }
 
         .cover-divider {
-            width: 60mm;
-            height: 3px;
-            background-color: #fbbf24;
-            margin-bottom: 20px;
+            width: 70mm;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-gold), transparent);
+            margin-bottom: 30px;
         }
 
         .cover-company {
-            font-size: 16pt;
+            font-size: 18pt;
             font-weight: 300;
-            color: #e2e8f0;
+            color: #f1f5f9;
             margin: 0;
+            letter-spacing: -0.5px;
+        }
+        
+        .cover-company strong {
+            color: #ffffff;
+            font-weight: 600;
         }
 
         .cover-footer {
             margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 20px;
             display: flex;
             justify-content: space-between;
             font-size: 9pt;
             color: #94a3b8;
+            z-index: 10;
+            letter-spacing: 0.5px;
         }
 
         /* Inside Header (shows on every page except cover) */
         .inside-header {
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
+            border-bottom: 1px solid var(--slate-200);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 8.5pt;
-            color: #64748b;
+            color: var(--slate-500);
+            font-weight: 500;
         }
 
         .inside-header-logo {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
-            color: #b45309;
+            color: var(--accent);
+            letter-spacing: 0.5px;
         }
 
         /* Stats Bar on Executive Summary */
         .stats-bar {
-            background-color: #f8fafc;
-            border-left: 4px solid #b45309;
-            padding: 12px 18px;
-            margin: 20px 0;
+            background-color: var(--slate-50);
+            border-left: 4px solid var(--accent);
+            padding: 15px 20px;
+            margin: 25px 0;
             display: flex;
             justify-content: space-between;
+            border-radius: 0 8px 8px 0;
         }
 
         .stat-item {
             text-align: center;
             flex: 1;
         }
+        
+        .stat-item:not(:last-child) {
+            border-right: 1px solid var(--slate-200);
+        }
 
         .stat-val {
-            font-size: 13pt;
+            font-size: 12pt;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--primary);
         }
 
         .stat-lbl {
-            font-size: 8pt;
+            font-size: 7.5pt;
             text-transform: uppercase;
-            color: #64748b;
-            letter-spacing: 0.5px;
-            margin-top: 3px;
+            color: var(--slate-500);
+            letter-spacing: 0.8px;
+            margin-top: 4px;
+            font-weight: 600;
         }
 
-        /* Cards/Lists Styling */
+        /* Primary Value Proposition Banner */
+        .value-prop-banner {
+            background: linear-gradient(135deg, var(--slate-100) 0%, var(--slate-50) 100%);
+            border: 1px solid var(--slate-200);
+            border-left: 5px solid var(--primary-light);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 25px 0;
+        }
+        
+        .value-prop-title {
+            font-size: 8pt;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--slate-500);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .value-prop-text {
+            font-size: 11pt;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: var(--slate-800);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* 2x2 Buyer Persona Grid */
+        .persona-grid {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .persona-card {
+            flex: 1;
+            background-color: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            padding: 16px 18px;
+        }
+
+        .persona-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .persona-name::before {
+            content: "👤";
+            font-size: 11pt;
+        }
+
+        .persona-section-title {
+            font-size: 8pt;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        .persona-text {
+            font-size: 9pt;
+            color: var(--slate-700);
+            margin: 0;
+            line-height: 1.45;
+        }
+
+        /* Competitor Comparison Matrix Table */
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 9.5pt;
+        }
+
+        .matrix-table th {
+            background-color: var(--primary);
+            color: #ffffff;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            font-size: 9pt;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--primary);
+        }
+        
+        .matrix-table th:first-child {
+            border-radius: 6px 0 0 0;
+        }
+        .matrix-table th:last-child {
+            border-radius: 0 6px 0 0;
+        }
+
+        .matrix-table td {
+            padding: 12px 16px;
+            border: 1px solid var(--slate-200);
+            vertical-align: top;
+            line-height: 1.5;
+        }
+
+        .matrix-table tr:nth-child(even) td {
+            background-color: var(--slate-50);
+        }
+        
+        .matrix-comp-name {
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        /* Social Scorecard Visual Widget */
+        .scorecard-container {
+            display: flex;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .score-card {
+            flex: 1;
+            background: linear-gradient(135deg, #ffffff 0%, var(--slate-50) 100%);
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .score-card::top {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: var(--accent);
+        }
+
+        .score-card.primary-grade::top {
+            background-color: var(--secondary);
+        }
+
+        .score-lbl {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            color: var(--slate-500);
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .score-val {
+            font-family: 'Playfair Display', serif;
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+            margin: 10px 0;
+        }
+        
+        .score-val.grade-a { color: #059669; }
+        .score-val.grade-b { color: #d97706; }
+        .score-val.grade-c { color: #dc2626; }
+        .score-val.grade-na { color: var(--slate-500); }
+
+        .score-status {
+            font-size: 8pt;
+            font-weight: 600;
+            color: var(--slate-700);
+            background-color: var(--slate-100);
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        /* Sleek Pain Point Challenge Cards */
         .pain-points-list {
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .pain-point-item {
             background-color: #fffbeb;
-            border-left: 4px solid #d97706;
+            border-left: 4px solid var(--accent);
             margin-bottom: 15px;
-            padding: 12px 18px;
-            border-radius: 0 6px 6px 0;
+            padding: 14px 20px;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.01);
         }
 
         .pain-point-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #92400e;
             font-size: 11pt;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            font-family: 'Inter', sans-serif;
         }
 
         .pain-point-desc {
             font-size: 9.5pt;
             color: #78350f;
-            line-height: 1.5;
+            line-height: 1.55;
             text-align: justify;
+            margin: 0;
         }
 
-        .recommendation-card {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        /* Chronological Strategic Roadmap Timeline */
+        .timeline-container {
+            position: relative;
+            margin: 30px 10px 10px 20px;
+            padding-left: 30px;
+            border-left: 2px solid var(--slate-200);
         }
 
-        .rec-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
         }
 
-        .rec-num {
-            background-color: #0f172a;
-            color: #ffffff;
-            font-size: 9pt;
-            font-weight: 700;
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -41px;
+            top: 2px;
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-right: 10px;
+            background-color: #ffffff;
+            border: 3px solid var(--accent);
+            z-index: 10;
+        }
+        
+        .timeline-item.active-item::before {
+            background-color: var(--accent);
         }
 
-        .rec-title {
-            font-size: 11.5pt;
-            font-weight: 600;
-            color: #0f172a;
-            margin: 0;
+        .timeline-phase {
+            font-size: 8pt;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .timeline-card {
+            background-color: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            padding: 16px 20px;
+        }
+
+        .timeline-title {
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0 0 8px 0;
             font-family: 'Inter', sans-serif;
         }
 
-        .rec-body {
+        .timeline-desc {
             font-size: 9.5pt;
-            color: #334155;
-            line-height: 1.5;
+            color: var(--slate-700);
+            line-height: 1.55;
             margin: 0;
             text-align: justify;
         }
 
         /* Closing Call to Action */
         .cta-box {
-            background-color: #0f172a;
+            background: linear-gradient(135deg, #090d16 0%, var(--primary) 100%);
             color: #ffffff;
-            padding: 22px 25px;
+            padding: 30px;
             border-radius: 8px;
             margin-top: 30px;
             text-align: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         .cta-title {
             font-family: 'Playfair Display', serif;
-            font-size: 16pt;
-            color: #fbbf24;
-            margin-bottom: 10px;
-            font-weight: 600;
+            font-size: 18pt;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+            font-weight: 700;
         }
 
         .cta-text {
             font-size: 10pt;
             color: #cbd5e1;
-            margin-bottom: 15px;
-            line-height: 1.5;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            padding: 0 20px;
         }
 
         .cta-button {
             display: inline-block;
-            background-color: #fbbf24;
-            color: #0f172a;
-            padding: 8px 20px;
-            font-weight: 600;
-            font-size: 10pt;
+            background-color: var(--accent-gold);
+            color: var(--primary);
+            padding: 10px 24px;
+            font-weight: 700;
+            font-size: 9.5pt;
             text-decoration: none;
             border-radius: 4px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -335,11 +623,11 @@
             <h1 class="cover-title">Business & Market<br>Intelligence Report</h1>
             <div class="cover-divider"></div>
             <p class="cover-company">Prepared for: <strong>{{ lead.company_name }}</strong></p>
-            <p style="color: #94a3b8; font-size: 10pt; margin-top: 10px;">Website: {{ lead.website }}</p>
+            <p style="color: #94a3b8; font-size: 10.5pt; margin-top: 10px; font-weight: 400; letter-spacing: 0.5px;">Website: {{ lead.website }}</p>
         </div>
         <div class="cover-footer">
             <div>DATE GENERATED: {{ date }}</div>
-            <div>STATUS: CONFIDENTIAL</div>
+            <div>STATUS: CONFIDENTIAL ASSESSMENT</div>
         </div>
     </div>
 
@@ -347,7 +635,7 @@
     {% macro page_header(title) %}
     <div class="inside-header">
         <div>{{ lead.company_name }} — {{ title }}</div>
-        <div class="inside-header-logo">Lead Gen Automation</div>
+        <div class="inside-header-logo">SimplifIQ Business Intelligence</div>
     </div>
     {% endmacro %}
 
@@ -371,6 +659,11 @@
             </div>
         </div>
 
+        <div class="value-prop-banner">
+            <div class="value-prop-title">Core Strategic Value Proposition</div>
+            <p class="value-prop-text">"{{ report.primary_value_prop }}"</p>
+        </div>
+
         <div style="margin-top: 20px;">
             {% for paragraph in report.executive_summary.split('\n\n') %}
                 {% if paragraph.strip() %}
@@ -380,10 +673,25 @@
         </div>
     </div>
 
-    <!-- PAGE 3: COMPANY PROFILE -->
+    <!-- PAGE 3: BUYER PERSONAS -->
     <div class="page-break container">
-        {{ page_header("Company Profile") }}
-        <h2>Company Profile & Offerings</h2>
+        {{ page_header("Target Buyer Personas") }}
+        <h2>Strategic Target Audience</h2>
+        <p>To maximize engagement and lead conversion efficiency, our pipeline outlines the following primary buyer personas targeted by {{ lead.company_name }}'s product and services portfolio:</p>
+        
+        <div class="persona-grid">
+            {% for persona in report.target_personas %}
+            <div class="persona-card">
+                <div class="persona-name">{{ persona.name }}</div>
+                
+                <div class="persona-section-title">Core Operational Friction</div>
+                <p class="persona-text">{{ persona.pain_point }}</p>
+                
+                <div class="persona-section-title">Strategic Value Hook</div>
+                <p class="persona-text">{{ persona.value_hook }}</p>
+            </div>
+            {% endfor %}
+        </div>
         
         <div style="margin-top: 20px;">
             {% for paragraph in report.company_profile.split('\n\n') %}
@@ -411,8 +719,27 @@
     <!-- PAGE 5: COMPETITIVE POSITIONING -->
     <div class="page-break container">
         {{ page_header("Competitive Positioning") }}
-        <h2>Competitive Positioning</h2>
+        <h2>Competitive Positioning Matrix</h2>
         
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Competitor</th>
+                    <th style="width: 35%;">Strategic Niche & Focus</th>
+                    <th style="width: 40%;">Our Competitive Advantage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for competitor in report.competitors_matrix %}
+                <tr>
+                    <td class="matrix-comp-name">{{ competitor.name }}</td>
+                    <td>{{ competitor.focus }}</td>
+                    <td>{{ competitor.advantage }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         <div style="margin-top: 20px;">
             {% for paragraph in report.competitive_positioning.split('\n\n') %}
                 {% if paragraph.strip() %}
@@ -425,8 +752,42 @@
     <!-- PAGE 6: BRAND & SOCIAL MEDIA -->
     <div class="page-break container">
         {{ page_header("Brand & Social Media Presence") }}
-        <h2>Brand & Social Presence</h2>
+        <h2>Brand & Social Presence Dashboard</h2>
         
+        <div class="scorecard-container">
+            <div class="score-card">
+                <div class="score-lbl">LinkedIn Presence</div>
+                <div class="score-val {% if report.social_scorecard.linkedin_score == 'A' or report.social_scorecard.linkedin_score == 'A+' %}grade-a{% elif report.social_scorecard.linkedin_score == 'B' %}grade-b{% elif report.social_scorecard.linkedin_score == 'C' or report.social_scorecard.linkedin_score == 'D' %}grade-c{% else %}grade-na{% endif %}">
+                    {{ report.social_scorecard.linkedin_score }}
+                </div>
+                <div class="score-status">Audit Grade</div>
+            </div>
+            
+            <div class="score-card">
+                <div class="score-lbl">Instagram Reach</div>
+                <div class="score-val {% if report.social_scorecard.instagram_score == 'A' or report.social_scorecard.instagram_score == 'A+' %}grade-a{% elif report.social_scorecard.instagram_score == 'B' %}grade-b{% elif report.social_scorecard.instagram_score == 'C' or report.social_scorecard.instagram_score == 'D' %}grade-c{% else %}grade-na{% endif %}">
+                    {{ report.social_scorecard.instagram_score }}
+                </div>
+                <div class="score-status">Engagement Grade</div>
+            </div>
+            
+            <div class="score-card">
+                <div class="score-lbl">Branding Design</div>
+                <div class="score-val {% if report.social_scorecard.branding_grade == 'A' or report.social_scorecard.branding_grade == 'A+' %}grade-a{% elif report.social_scorecard.branding_grade == 'B' %}grade-b{% elif report.social_scorecard.branding_grade == 'C' or report.social_scorecard.branding_grade == 'D' %}grade-c{% else %}grade-na{% endif %}">
+                    {{ report.social_scorecard.branding_grade }}
+                </div>
+                <div class="score-status">Cohesion Quality</div>
+            </div>
+            
+            <div class="score-card">
+                <div class="score-lbl">Voice Cohesion</div>
+                <div class="score-val {% if report.social_scorecard.cohesion_score == 'A' or report.social_scorecard.cohesion_score == 'A+' %}grade-a{% elif report.social_scorecard.cohesion_score == 'B' %}grade-b{% elif report.social_scorecard.cohesion_score == 'C' or report.social_scorecard.cohesion_score == 'D' %}grade-c{% else %}grade-na{% endif %}">
+                    {{ report.social_scorecard.cohesion_score }}
+                </div>
+                <div class="score-status">Audience Trust</div>
+            </div>
+        </div>
+
         <div style="margin-top: 20px;">
             {% for paragraph in report.social_media_analysis.split('\n\n') %}
                 {% if paragraph.strip() %}
@@ -453,8 +814,8 @@
     <!-- PAGE 8: IDENTIFIED CHALLENGES -->
     <div class="page-break container">
         {{ page_header("Operational Pain Points") }}
-        <h2>Identified Pain Points & operational Gaps</h2>
-        <p>Based on our multi-AI pipeline sweep and analysis of website structures and market trends, the following key challenges have been highlighted as critical growth constraints for {{ lead.company_name }}:</p>
+        <h2>Identified Pain Points & Operational Gaps</h2>
+        <p>Based on our multi-AI pipeline sweep and deep analysis of digital footprints, website structures, and market trends, the following key challenges have been highlighted as critical growth constraints for {{ lead.company_name }}:</p>
         
         <div class="pain-points-list">
             {% for point in report.pain_points %}
@@ -472,21 +833,27 @@
         </div>
     </div>
 
-    <!-- PAGE 9: STRATEGIC RECOMMENDATIONS -->
+    <!-- PAGE 9: STRATEGIC ACTION ROADMAP -->
     <div class="page-break container">
         {{ page_header("Strategic Action Roadmap") }}
-        <h2>Strategic Recommendations</h2>
-        <p>To bypass market friction, close internal operational gaps, and accelerate corporate growth, our consultancy outlines the following immediate action roadmap:</p>
+        <h2>Strategic Action Roadmap</h2>
+        <p>To close identified operational gaps, neutralize competitor plays, and scale corporate reach, we outline the following chronological roadmap execution timeline:</p>
         
-        <div style="margin-top: 15px;">
+        <div class="timeline-container">
             {% for rec in report.recommendations %}
-                <div class="recommendation-card">
-                    <div class="rec-header">
-                        <div class="rec-num">{{ loop.index }}</div>
-                        <h4 class="rec-title">{{ rec.title }}</h4>
-                    </div>
-                    <p class="rec-body">{{ rec.description }}</p>
+            <div class="timeline-item {% if loop.first %}active-item{% endif %}">
+                <div class="timeline-phase">
+                    {% if loop.index0 < report.roadmap_phases|length %}
+                        {{ report.roadmap_phases[loop.index0] }}
+                    {% else %}
+                        Phase {{ loop.index }}: Execution Milestone
+                    {% endif %}
                 </div>
+                <div class="timeline-card">
+                    <h4 class="timeline-title">{{ rec.title }}</h4>
+                    <p class="timeline-desc">{{ rec.description }}</p>
+                </div>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -496,7 +863,7 @@
         {{ page_header("Consultancy Outro & CTA") }}
         <h2>Next Steps & Action Roadmap</h2>
         
-        <div style="margin-top: 20px; min-height: 100mm;">
+        <div style="margin-top: 20px; min-height: 90mm;">
             {% for paragraph in report.closing_note.split('\n\n') %}
                 {% if paragraph.strip() %}
                     <p>{{ paragraph }}</p>
@@ -506,7 +873,7 @@
 
         <div class="cta-box">
             <div class="cta-title">Ready to Accelerate Growth?</div>
-            <p class="cta-text">Leverage our team of expert consultants to implement this custom strategic roadmap for {{ lead.company_name }}. Let's discuss detailed execution phases, tech integrations, and pricing.</p>
+            <p class="cta-text">Leverage our team of expert strategic advisors to execute this custom implementation roadmap for {{ lead.company_name }}. Let's schedule a deep-dive call to discuss timelines and team alignment.</p>
             <a href="#" class="cta-button">Schedule An Executive Consultation</a>
         </div>
     </div>

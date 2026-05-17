@@ -29,15 +29,30 @@ class RecommendationItem(BaseModel):
     title: str = Field(..., description="Actionable title of the business recommendation")
     description: str = Field(..., description="Deep, highly context-driven advice explanation")
 
+class CompetitorItem(BaseModel):
+    name: str = Field(..., description="Name of the direct competitor")
+    focus: str = Field(..., description="Main business focus or niche of this competitor")
+    advantage: str = Field(..., description="Our target company's primary competitive advantage over them")
+
+class PersonaItem(BaseModel):
+    name: str = Field(..., description="Name or role of the target buyer persona (e.g. CTO, VP of Operations)")
+    pain_point: str = Field(..., description="Primary daily friction or frustration they face")
+    value_hook: str = Field(..., description="How our target company's product/service directly solves their pain")
+
 class EnrichedCompanyData(BaseModel):
     executive_summary: str = Field(..., description="3-4 paragraph high-level consult-grade summary")
     company_profile: str = Field(..., description="Detailed profile of company services and target users")
+    primary_value_prop: str = Field(..., description="Concise, high-impact summary of their core customer value hook")
+    target_personas: List[PersonaItem] = Field(..., min_length=2, max_length=2, description="2 core buyer personas targeted by the business")
     industry_landscape: str = Field(..., description="Market analysis, macro trends, and drivers")
     competitive_positioning: str = Field(..., description="Differentiators, competitor gaps, and positions")
+    competitors_matrix: List[CompetitorItem] = Field(..., min_length=2, max_length=3, description="2-3 direct competitors comparison matrix")
     social_media_analysis: str = Field(..., description="LinkedIn and Instagram presence audit")
+    social_scorecard: Dict[str, str] = Field(..., description="Audit scores (e.g., linkedin_score, instagram_score, branding_grade, cohesion_score)")
     growth_signals: str = Field(..., description="Hiring surges, press events, and partnership expansions")
-    pain_points: List[str] = Field(..., min_items=3, max_items=5, description="3-5 detailed operational challenge bullets")
-    recommendations: List[RecommendationItem] = Field(..., min_items=3, max_items=5, description="3-5 structured recommendation cards")
+    pain_points: List[str] = Field(..., min_length=3, max_length=5, description="3-5 detailed operational challenge bullets")
+    recommendations: List[RecommendationItem] = Field(..., min_length=3, max_length=5, description="3-5 structured recommendation cards")
+    roadmap_phases: List[str] = Field(..., min_length=3, max_length=5, description="3-5 chronological phase milestone titles corresponding to the recommendations")
     closing_note: str = Field(..., description="Strategic outro call-to-action")
 
 class LeadRecord(BaseModel):

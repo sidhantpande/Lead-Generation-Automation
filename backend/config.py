@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     GOOGLE_SHEET_ID: Optional[str] = Field(default=None)
     
     # App Settings
+    GOOGLE_WEB_APP_URL: Optional[str] = Field(default=None)
     APP_HOST: str = Field(default="0.0.0.0")
     APP_PORT: int = Field(default=8000)
     OUTPUT_DIR: str = Field(default="outputs")

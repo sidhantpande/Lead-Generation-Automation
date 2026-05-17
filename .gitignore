@@ -12,6 +12,7 @@ credentials/service_account.json
 # Generated Output Assets
 outputs/*.pdf
 logs/
+*.log
 
 # IDE files
 .DS_Store

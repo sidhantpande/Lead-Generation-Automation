@@ -486,7 +486,7 @@
 
                 <div class="form-group">
                     <label for="linkedin_url">LinkedIn Company URL</label>
-                    <input type="url" id="linkedin_url" name="linkedin_url" class="form-control" placeholder="https://linkedin.com/company/acme">
+                    <input type="text" id="linkedin_url" name="linkedin_url" class="form-control" placeholder="https://linkedin.com/company/acme">
                 </div>
 
                 <div class="form-group">
@@ -643,134 +643,153 @@
         leadForm.addEventListener("submit", async function(e) {
             e.preventDefault();
             
-            // Form validations
-            if (!leadForm.checkValidity()) return;
-
-            // Form data retrieval
-            const formData = {
-                name: document.getElementById("name").value.trim(),
-                email: document.getElementById("email").value.trim(),
-                company_name: document.getElementById("company_name").value.trim(),
-                website: document.getElementById("website").value.trim(),
-                linkedin_url: document.getElementById("linkedin_url").value.trim() || null,
-                instagram_handle: document.getElementById("instagram_handle").value.trim() || null,
-                industry: document.getElementById("industry").value || null,
-                company_size: document.getElementById("company_size").value || null,
-                additional_context: document.getElementById("additional_context").value.trim() || null
-            };
-
-            // Switch views
-            leadForm.style.display = "none";
-            visualizerPanel.style.display = "block";
-            successBox.style.display = "none";
-            errorBox.style.display = "none";
-            terminal.innerHTML = "";
-            resetSteps();
-            
-            printLog("Validating form values and initializing secure network pipeline...", "info");
-            setStepState(0, "active");
-            
             try {
-                // Dynamically target the correct backend URL (supports file:// and Live Server origins)
-                const backendUrl = window.location.origin.includes(":8000") 
-                    ? "/api/submit" 
-                    : "http://localhost:8000/api/submit";
+                // Form validations
+                if (!leadForm.checkValidity()) return;
 
-                // Post form payload to the streaming API endpoint
-                const response = await fetch(backendUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(formData)
-                });
+                // Form data retrieval
+                const rawLinkedin = document.getElementById("linkedin_url").value.trim();
+                const rawInstagram = document.getElementById("instagram_handle").value.trim();
                 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    let errMsg = `Server returned HTTP status ${response.status}`;
-                    try {
-                        const errData = JSON.parse(errText);
-                        errMsg = errData.detail || errMsg;
-                    } catch (parseErr) {
-                        if (errText && errText.trim()) {
-                            errMsg = errText;
-                        }
-                    }
-                    throw new Error(errMsg);
+                // Helper to cleanly sanitize social URLs user-friendlily
+                let linkedin_url = rawLinkedin || null;
+                if (linkedin_url && !linkedin_url.startsWith("http://") && !linkedin_url.startsWith("https://")) {
+                    linkedin_url = "https://" + linkedin_url;
+                }
+                
+                let instagram_handle = rawInstagram || null;
+                if (instagram_handle && instagram_handle.startsWith("@")) {
+                    instagram_handle = instagram_handle.substring(1);
                 }
 
-                // Read body Stream reader
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                let buffer = "";
+                const formData = {
+                    name: document.getElementById("name").value.trim(),
+                    email: document.getElementById("email").value.trim(),
+                    company_name: document.getElementById("company_name").value.trim(),
+                    website: document.getElementById("website").value.trim(),
+                    linkedin_url: linkedin_url,
+                    instagram_handle: instagram_handle,
+                    industry: document.getElementById("industry").value || null,
+                    company_size: document.getElementById("company_size").value || null,
+                    additional_context: document.getElementById("additional_context").value.trim() || null
+                };
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+                // Switch views
+                leadForm.style.display = "none";
+                visualizerPanel.style.display = "block";
+                successBox.style.display = "none";
+                errorBox.style.display = "none";
+                terminal.innerHTML = "";
+                resetSteps();
+                
+                printLog("Validating form values and initializing secure network pipeline...", "info");
+                setStepState(0, "active");
+                
+                try {
+                    // Dynamically target the correct backend URL (supports file:// and Live Server origins)
+                    const backendUrl = window.location.origin.includes(":8000") 
+                        ? "/api/submit" 
+                        : "http://127.0.0.1:8000/api/submit";
 
-                    buffer += decoder.decode(value, { stream: true });
+                    // Post form payload to the streaming API endpoint
+                    const response = await fetch(backendUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(formData)
+                    });
                     
-                    // Split lines as separate JSON events
-                    const lines = buffer.split("\n");
-                    // Keep the last partial line in the buffer
-                    buffer = lines.pop();
-
-                    for (const line of lines) {
-                        if (!line.trim()) continue;
-                        
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        let errMsg = `Server returned HTTP status ${response.status}`;
                         try {
-                            const event = JSON.parse(line);
-                            
-                            // 1. Log to visual Terminal box
-                            printLog(event.message, event.level || "info");
-                            
-                            // 2. Handle Step transitions
-                            if (event.step_completed !== undefined) {
-                                setStepState(event.step_completed, "completed");
+                            const errData = JSON.parse(errText);
+                            errMsg = errData.detail || errMsg;
+                        } catch (parseErr) {
+                            if (errText && errText.trim()) {
+                                errMsg = errText;
                             }
-                            if (event.step_active !== undefined) {
-                                setStepState(event.step_active, "active");
-                            }
+                        }
+                        throw new Error(errMsg);
+                    }
+
+                    // Read body Stream reader
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let buffer = "";
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        
+                        // Split lines as separate JSON events
+                        const lines = buffer.split("\n");
+                        // Keep the last partial line in the buffer
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
                             
-                            // 3. Handle End States
-                            if (event.status === "success") {
-                                setStepState(9, "completed");
-                                spinner.style.display = "none";
-                                successBox.style.display = "block";
+                            try {
+                                const event = JSON.parse(line);
                                 
-                                // Set direct download action and Drive links
-                                const downloadBase = window.location.origin.includes(":8000") ? "" : "http://localhost:8000";
-                                btnDownload.href = `${downloadBase}/api/download/${event.filename}`;
-                                if (event.drive_link && event.drive_link !== "#") {
-                                    btnDrive.href = event.drive_link;
-                                    btnDrive.style.display = "inline-block";
-                                } else {
-                                    btnDrive.style.display = "none";
+                                // 1. Log to visual Terminal box
+                                printLog(event.message, event.level || "info");
+                                
+                                // 2. Handle Step transitions
+                                if (event.step_completed !== undefined) {
+                                    setStepState(event.step_completed, "completed");
+                                }
+                                if (event.step_active !== undefined) {
+                                    setStepState(event.step_active, "active");
                                 }
                                 
-                                document.getElementById("successDesc").textContent = 
-                                    `Your custom 10-page executive intelligence audit for ${formData.company_name} has been processed successfully. PDF generated locally and shared!`;
-                                return; // Stop processing stream
-                            }
-                            
-                            if (event.status === "error") {
-                                if (event.step_failed !== undefined) {
-                                    setStepState(event.step_failed, "failed");
+                                // 3. Handle End States
+                                if (event.status === "success") {
+                                    setStepState(9, "completed");
+                                    spinner.style.display = "none";
+                                    successBox.style.display = "block";
+                                    
+                                    // Set direct download action and Drive links
+                                    const downloadBase = window.location.origin.includes(":8000") ? "" : "http://127.0.0.1:8000";
+                                    btnDownload.href = `${downloadBase}/api/download/${event.filename}`;
+                                    if (event.drive_link && event.drive_link !== "#") {
+                                        btnDrive.href = event.drive_link;
+                                        btnDrive.style.display = "inline-block";
+                                    } else {
+                                        btnDrive.style.display = "none";
+                                    }
+                                    
+                                    document.getElementById("successDesc").textContent = 
+                                        `Your custom 10-page executive intelligence audit for ${formData.company_name} has been processed successfully. PDF generated locally and shared!`;
+                                    return; // Stop processing stream
                                 }
-                                throw new Error(event.message);
+                                
+                                if (event.status === "error") {
+                                    if (event.step_failed !== undefined) {
+                                        setStepState(event.step_failed, "failed");
+                                    }
+                                    throw new Error(event.message);
+                                }
+                                
+                            } catch (jsonErr) {
+                                console.error("Failed to parse stream chunk:", line, jsonErr);
                             }
-                            
-                        } catch (jsonErr) {
-                            console.error("Failed to parse stream chunk:", line, jsonErr);
                         }
                     }
+                    
+                } catch (err) {
+                    spinner.style.display = "none";
+                    errorBox.style.display = "block";
+                    document.getElementById("errorBody").textContent = err.message || "An unexpected network disruption occurred during pipeline execution.";
+                    printLog(`[FATAL PIPELINE HALT] ${err.message}`, "error");
                 }
-                
-            } catch (err) {
-                spinner.style.display = "none";
-                errorBox.style.display = "block";
-                document.getElementById("errorBody").textContent = err.message || "An unexpected network disruption occurred during pipeline execution.";
-                printLog(`[FATAL PIPELINE HALT] ${err.message}`, "error");
+            } catch (setupErr) {
+                console.error("Fatal Form Submission Setup Error:", setupErr);
+                alert("Could not initialize form submission: " + setupErr.message);
             }
         });
 

@@ -15,7 +15,7 @@ from backend.utils.logger import log_step, logger
 from backend.scraper import scrape_website
 from backend.enrichment import run_enrichment_pipeline
 from backend.pdf_generator import generate_pdf_report
-from backend.drive_uploader import upload_pdf_to_drive
+from backend.drive_uploader import upload_pdf_to_drive, upload_and_log_via_web_app
 from backend.sheets_logger import log_lead_to_sheets
 from backend.email_sender import send_report_email
 
@@ -194,29 +194,60 @@ async def submit_lead(lead: LeadInput):
                 # ==========================================
                 event_queue.put_nowait(yield_event("running", f"Step 7: Accessing Google Drive and uploading report file..."))
                 
+                fallback_sheets_logged = False
                 try:
                     drive_link = await asyncio.to_thread(upload_pdf_to_drive, pdf_path, lead.company_name)
                     event_queue.put_nowait(yield_event("running", "Upload complete. Access permissions updated to viewable.", level="success", step_completed=7, step_active=8))
                     await asyncio.sleep(0.5)
                 except Exception as e:
-                    logger.warning(f"Google Drive upload issue (non-fatal): {str(e)}")
-                    drive_link = "#"
-                    event_queue.put_nowait(yield_event("running", f"Drive Alert: Upload skipped (Service Account has no storage quota). Continuing pipeline...", level="warning", step_completed=7, step_active=8))
-                    await asyncio.sleep(0.5)
+                    logger.warning(f"Google Drive upload issue (Service Account): {str(e)}")
+                    # Check if Google Web App URL is configured for fallback
+                    if settings.GOOGLE_WEB_APP_URL and settings.GOOGLE_WEB_APP_URL.strip() != "":
+                        try:
+                            event_queue.put_nowait(yield_event("running", "Service Account upload quota exceeded. Triggering Google Apps Script Web App fallback...", level="warning"))
+                            drive_link = await asyncio.to_thread(upload_and_log_via_web_app, pdf_path, lead)
+                            fallback_sheets_logged = True
+                            event_queue.put_nowait(yield_event("running", "Web App upload & sheet logging completed successfully!", level="success", step_completed=7, step_active=8))
+                            await asyncio.sleep(0.5)
+                        except Exception as fallback_err:
+                            logger.error(f"Fallback Google Web App execution failed: {str(fallback_err)}")
+                            drive_link = "#"
+                            event_queue.put_nowait(yield_event("running", f"Drive Alert: Apps Script Web App upload also failed ({str(fallback_err)}). Continuing pipeline...", level="warning", step_completed=7, step_active=8))
+                            await asyncio.sleep(0.5)
+                    else:
+                        drive_link = "#"
+                        event_queue.put_nowait(yield_event("running", "Drive Alert: Upload skipped (Service Account has no storage quota and Web App fallback not configured). Continuing pipeline...", level="warning", step_completed=7, step_active=8))
+                        await asyncio.sleep(0.5)
 
                 # ==========================================
                 # STEP 8: Google Sheets Logging
                 # ==========================================
                 event_queue.put_nowait(yield_event("running", "Step 8: Appending lead data record row in Google Sheets base..."))
                 
-                try:
-                    await asyncio.to_thread(log_lead_to_sheets, lead, drive_link, "Success")
-                    event_queue.put_nowait(yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9))
+                if fallback_sheets_logged:
+                    event_queue.put_nowait(yield_event("running", "Sheet row already logged via Web App upload fallback step.", level="success", step_completed=8, step_active=9))
                     await asyncio.sleep(0.5)
-                except Exception as e:
-                    logger.warning(f"Google Sheets logging issue (non-fatal): {str(e)}")
-                    event_queue.put_nowait(yield_event("running", f"Sheet Alert: Log write skipped (permission or API limits). Continuing pipeline...", level="warning", step_completed=8, step_active=9))
-                    await asyncio.sleep(0.5)
+                else:
+                    try:
+                        await asyncio.to_thread(log_lead_to_sheets, lead, drive_link, "Success")
+                        event_queue.put_nowait(yield_event("running", "Sheet database row successfully appended.", level="success", step_completed=8, step_active=9))
+                        await asyncio.sleep(0.5)
+                    except Exception as e:
+                        logger.warning(f"Google Sheets logging issue (Service Account): {str(e)}")
+                        # Check if we can fallback to Web App to log lead (using the same call)
+                        if settings.GOOGLE_WEB_APP_URL and settings.GOOGLE_WEB_APP_URL.strip() != "":
+                            try:
+                                event_queue.put_nowait(yield_event("running", "Service Account Sheets API blocked. Triggering Apps Script Web App log fallback...", level="warning"))
+                                drive_link = await asyncio.to_thread(upload_and_log_via_web_app, pdf_path, lead)
+                                event_queue.put_nowait(yield_event("running", "Web App log completed successfully via fallback!", level="success", step_completed=8, step_active=9))
+                                await asyncio.sleep(0.5)
+                            except Exception as fallback_err:
+                                logger.error(f"Fallback Google Web App execution failed: {str(fallback_err)}")
+                                event_queue.put_nowait(yield_event("running", f"Sheet Alert: Log write fallback failed ({str(fallback_err)}). Continuing pipeline...", level="warning", step_completed=8, step_active=9))
+                                await asyncio.sleep(0.5)
+                        else:
+                            event_queue.put_nowait(yield_event("running", f"Sheet Alert: Log write skipped (permission or API limits). Continuing pipeline...", level="warning", step_completed=8, step_active=9))
+                            await asyncio.sleep(0.5)
 
                 # ==========================================
                 # STEP 9: Gmail SMTP Email Dispatch

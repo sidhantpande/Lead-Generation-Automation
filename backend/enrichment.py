@@ -2,8 +2,6 @@ import json
 import asyncio
 from typing import Dict, Any, List
 from openai import AsyncOpenAI
-from google import genai
-from google.genai import types
 
 from backend.config import settings
 from backend.utils.logger import log_step, logger
@@ -18,13 +16,18 @@ def get_openai_client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 # Configure Gemini Client
-def get_gemini_client() -> genai.Client:
+def get_gemini_client():
+    # LAZY IMPORT OPTIMIZATION: Defer importing google-genai package here.
+    # On macOS, resolving the google-genai namespace with multiple Google SDKs
+    # installed inside iCloud/Desktop synchronized folders can take over 50 seconds.
+    # Lazy importing here prevents server startup and hot-reload delays entirely!
+    from google import genai
     if not settings.GEMINI_API_KEY:
         raise ValueError("Missing GEMINI_API_KEY. Configure it in your .env file.")
     return genai.Client(api_key=settings.GEMINI_API_KEY)
 
 async def generate_gemini_content_with_fallback(
-    client: genai.Client, 
+    client, 
     prompt: str, 
     search_grounding: bool = False,
     progress_callback = None
@@ -33,7 +36,10 @@ async def generate_gemini_content_with_fallback(
     Executes a Gemini generation call with automatic model rotation fallback.
     If a model hits a 429 RESOURCE_EXHAUSTED daily quota or persistent rate limits,
     this function dynamically falls back to the next available model in the rotation pool.
+    Utilizes native AIO async execution and extracts search grounding metadata.
     """
+    # LAZY IMPORT OPTIMIZATION: Defer importing types to prevent global import delay on server boot
+    from google.genai import types
     models = [
         "gemini-3.1-flash-lite",
         "gemini-2.5-flash-lite",
@@ -42,24 +48,59 @@ async def generate_gemini_content_with_fallback(
         "gemini-flash-latest"
     ]
     
-    config = types.GenerateContentConfig()
+    # Configure safety and professional settings (temperature=0.2 for grounding stability)
+    config = types.GenerateContentConfig(
+        temperature=0.2,
+        safety_settings=[
+            types.SafetySetting(
+                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            types.SafetySetting(
+                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            types.SafetySetting(
+                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            )
+        ]
+    )
+    
     if search_grounding:
         config.tools = [types.Tool(google_search=types.GoogleSearch())]
         
-    loop = asyncio.get_event_loop()
-    
     for idx, model in enumerate(models):
-        for attempt in range(1, 4):  # Up to 3 attempts per model with a small stagger wait
+        for attempt in range(1, 4):  # Up to 3 attempts per model with an exponential stagger wait
             try:
-                logger.info(f"Attempting Gemini generation using model '{model}' (Attempt #{attempt})")
-                response = await loop.run_in_executor(
-                    None,
-                    lambda: client.models.generate_content(
-                        model=model,
-                        contents=prompt,
-                        config=config
-                    )
+                logger.info(f"Attempting native async Gemini generation using model '{model}' (Attempt #{attempt})")
+                
+                # Pure native AIO asynchronous execution
+                response = await client.aio.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=config
                 )
+                
+                # Check for grounding metadata queries and log/callback to UI
+                queries_run = []
+                try:
+                    if search_grounding and response.candidates and response.candidates[0].grounding_metadata:
+                        meta = response.candidates[0].grounding_metadata
+                        if meta.web_search_queries:
+                            queries_run = list(meta.web_search_queries)
+                except Exception as meta_err:
+                    logger.debug(f"Could not parse search grounding queries: {str(meta_err)}")
+                
+                if queries_run:
+                    queries_str = ", ".join([f"'{q}'" for q in queries_run])
+                    logger.info(f"Model '{model}' successfully executed search grounding using queries: {queries_run}")
+                    if progress_callback:
+                        await progress_callback(
+                            f"Grounding Search: Successfully scanned Google Search using: {queries_str}",
+                            "success"
+                        )
+                
                 return response.text or ""
             except Exception as e:
                 err_msg = str(e)
@@ -269,9 +310,24 @@ async def run_openai_content_synthesis(lead: LeadInput, broad_sweep: str, scrape
         f"{{\n"
         f"  \"executive_summary\": \"3-4 detailed, long paragraphs of a premium C-level overview of their market potential, core analysis, and macro trajectory.\",\n"
         f"  \"company_profile\": \"3-4 detailed, long paragraphs of their history, values, products, team, operational model, and value proposition.\",\n"
+        f"  \"primary_value_prop\": \"A highly concise, one-sentence strategic value proposition summarizing their core unique customer promise.\",\n"
+        f"  \"target_personas\": [\n"
+        f"    {{\"name\": \"VP of Sales / Head of Operations / CTO\", \"pain_point\": \"Primary daily bottleneck or frustration they face in 1-2 sentences.\", \"value_hook\": \"How the company solves this pain in 1-2 sentences.\"}},\n"
+        f"    {{\"name\": \"Another key persona role\", \"pain_point\": \"Primary friction they face in 1-2 sentences.\", \"value_hook\": \"How the company solves this pain in 1-2 sentences.\"}}\n"
+        f"  ],\n"
         f"  \"industry_landscape\": \"3-4 detailed, long paragraphs of their industry vertical, macro trends, growth drivers, market volume, and headwinds.\",\n"
         f"  \"competitive_positioning\": \"3-4 detailed, long paragraphs of their market positioning, top direct competitors, differentiation gaps, and defensibility.\",\n"
+        f"  \"competitors_matrix\": [\n"
+        f"    {{\"name\": \"Competitor A Name\", \"focus\": \"Competitor Niche or Niche Focus\", \"advantage\": \"Our target company's primary comparative advantage over them in 1-2 sentences.\"}},\n"
+        f"    {{\"name\": \"Competitor B Name\", \"focus\": \"Competitor Niche Focus\", \"advantage\": \"Our target company's primary comparative advantage over them in 1-2 sentences.\"}}\n"
+        f"  ],\n"
         f"  \"social_media_analysis\": \"3-4 detailed, long paragraphs of brand presence, voice, engagement metrics on LinkedIn and Instagram (if provided), and overall branding feedback.\",\n"
+        f"  \"social_scorecard\": {{\n"
+        f"    \"linkedin_score\": \"Letter grade: A, B, C, D, or N/A based on their presence.\",\n"
+        f"    \"instagram_score\": \"Letter grade: A, B, C, D, or N/A based on presence.\",\n"
+        f"    \"branding_grade\": \"A, B, C, or D for general design style cohesion.\",\n"
+        f"    \"cohesion_score\": \"A, B, C, or D for voice consistency across platforms.\"\n"
+        f"  }},\n"
         f"  \"growth_signals\": \"3-4 detailed, long paragraphs of hiring indicators, recent funding rounds, PR statements, or expansion initiatives.\",\n"
         f"  \"pain_points\": [\n"
         f"    \"Specific operational or technological challenge 1 with deep context (at least 3-4 sentences detailing the root cause and impact)\",\n"
@@ -285,9 +341,14 @@ async def run_openai_content_synthesis(lead: LeadInput, broad_sweep: str, scrape
         f"    {{\"title\": \"Actionable recommendation title 2\", \"description\": \"Clear actionable implementation guide (5-6 sentences explaining the logic, steps, and expected impact)\"}},\n"
         f"    ...\n"
         f"  ],\n"
+        f"  \"roadmap_phases\": [\n"
+        f"    \"Phase 1: Concise phase execution focus name\",\n"
+        f"    \"Phase 2: Concise phase focus name\",\n"
+        f"    \"Phase 3: Concise phase focus name\"\n"
+        f"  ],\n"
         f"  \"closing_note\": \"Strategic closing statement (CTA) summarizing next steps (at least 5-6 sentences of high-value advice).\"\n"
         f"}}\n\n"
-        f"Important: Ensure 'pain_points' contains exactly 3 to 5 items, and 'recommendations' contains exactly 3 to 5 fully descriptive items. "
+        f"Important: Ensure 'pain_points' contains exactly 3 to 5 items, 'recommendations' contains exactly 3 to 5 items, and 'roadmap_phases' contains exactly same number of items as 'recommendations'. "
         f"Format everything professionally with perfect punctuation. No markup in strings."
     )
 
