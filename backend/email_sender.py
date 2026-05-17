@@ -1,50 +1,45 @@
 import os
+import smtplib
 from pathlib import Path
-import resend
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 from backend.config import settings
 from backend.utils.logger import log_step, logger
 from backend.utils.retry import api_retry_decorator
 from backend.models import LeadInput
 
-@api_retry_decorator("Resend Email Send")
+@api_retry_decorator("Gmail SMTP Email Send")
 def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
     """
-    Sends the generated PDF report as an email attachment and public link to the lead's email using Resend.
+    Sends the generated PDF report as an email attachment and public link to the lead's email using Gmail App Password via smtplib.
     """
-    log_step(9, "EMAIL_SENDER", f"Preparing email dispatch for {lead.email}")
+    log_step(9, "EMAIL_SENDER", f"Preparing SMTP email dispatch for {lead.email}")
     
     # 1. Validation check
-    if not settings.RESEND_API_KEY or settings.RESEND_API_KEY.strip() == "" or "your_resend" in settings.RESEND_API_KEY:
-        err_msg = "Email sending aborted: Missing RESEND_API_KEY in configuration."
+    missing_configs = []
+    if not settings.GMAIL_ADDRESS or settings.GMAIL_ADDRESS.strip() == "" or "your_gmail" in settings.GMAIL_ADDRESS:
+        missing_configs.append("GMAIL_ADDRESS")
+    if not settings.GMAIL_APP_PASSWORD or settings.GMAIL_APP_PASSWORD.strip() == "" or "your_gmail_app" in settings.GMAIL_APP_PASSWORD:
+        missing_configs.append("GMAIL_APP_PASSWORD")
+        
+    if missing_configs:
+        err_msg = f"Email sending aborted: Missing SMTP credentials: {', '.join(missing_configs)}"
         logger.error(err_msg)
         raise ValueError(err_msg)
 
-    # 2. Configure API Key
-    resend.api_key = settings.RESEND_API_KEY
-    
-    # 3. Read PDF file bytes for attachment
+    # 2. Read PDF file bytes for attachment
     logger.info(f"Reading PDF from {pdf_path} for attachment")
     if not pdf_path.exists():
         raise FileNotFoundError(f"PDF report file does not exist at {pdf_path}")
         
-    with open(pdf_path, "rb") as f:
-        pdf_bytes = f.read()
-        
-    # Convert bytes to a list of integers as required by the Resend Python SDK
-    byte_list = list(pdf_bytes)
-    
-    attachment_name = f"{lead.company_name.replace(' ', '_')}_Intelligence_Report.pdf"
-    
-    attachments = [
-        {
-            "filename": attachment_name,
-            "content": byte_list
-        }
-    ]
-    
-    # 4. Formulate email contents
-    subject = f"Your {lead.company_name} Intelligence Report — Prepared by SimplifIQ"
+    # 3. Create the MIMEMultipart message envelope
+    msg = MIMEMultipart()
+    msg['From'] = f"SimplifIQ Intelligence <{settings.GMAIL_ADDRESS}>"
+    msg['To'] = lead.email
+    msg['Subject'] = f"Your {lead.company_name} Intelligence Report — Prepared by SimplifIQ"
     
     # Premium styled HTML email body
     html_content = f"""
@@ -113,7 +108,7 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
     <body>
         <div class="container">
             <div class="header">
-                <h1>SimplifIQ</h1>
+                <h1 style="color: #fbbf24; margin: 0;">SimplifIQ</h1>
             </div>
             <div class="content">
                 <p>Hello {lead.name},</p>
@@ -125,7 +120,7 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
                 <p>We have attached the full PDF report directly to this email. You can also view and download the live report online in our secure Google Drive folder by clicking the button below:</p>
                 
                 <div class="button-container">
-                    <a href="{drive_link}" class="button">View Report Online</a>
+                    <a href="{drive_link}" class="button" style="color: #0f172a;">View Report Online</a>
                 </div>
                 
                 <p><strong>Key Areas Analyzed in Your Report:</strong></p>
@@ -154,16 +149,28 @@ def send_report_email(lead: LeadInput, pdf_path: Path, drive_link: str) -> None:
     </html>
     """
     
-    # 5. Dispatch email
-    logger.info(f"Dispatching Resend email call to {lead.email}")
+    # Attach HTML body
+    msg.attach(MIMEText(html_content, 'html'))
     
-    # In Resend Python, Emails.send is invoked as follows:
-    resend.Emails.send({
-        "from": f"{settings.RESEND_FROM_NAME} <{settings.RESEND_FROM_EMAIL}>",
-        "to": lead.email,
-        "subject": subject,
-        "html": html_content,
-        "attachments": attachments
-    })
+    # 4. Attach PDF file
+    attachment_name = f"{lead.company_name.replace(' ', '_')}_Intelligence_Report.pdf"
+    logger.info(f"Attaching PDF report as: {attachment_name}")
     
-    log_step(9, "EMAIL_SENDER", f"Report email successfully sent to {lead.email}", "SUCCESS")
+    with open(pdf_path, 'rb') as f:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(f.read())
+        encoders.encode_base64(part)
+        part.add_header(
+            'Content-Disposition', 
+            f'attachment; filename="{attachment_name}"'
+        )
+        msg.attach(part)
+        
+    # 5. Dispatch email via smtplib through smtp.gmail.com:587
+    logger.info(f"Connecting to smtp.gmail.com:587 via TLS using account: {settings.GMAIL_ADDRESS}")
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(settings.GMAIL_ADDRESS, settings.GMAIL_APP_PASSWORD)
+        server.send_message(msg)
+        
+    log_step(9, "EMAIL_SENDER", f"Report email successfully sent to {lead.email} via Gmail SMTP", "SUCCESS")

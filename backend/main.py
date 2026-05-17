@@ -202,18 +202,18 @@ async def submit_lead(lead: LeadInput):
             return
 
         # ==========================================
-        # STEP 9: Resend Email Dispatch
+        # STEP 9: Gmail SMTP Email Dispatch
         # ==========================================
-        yield yield_event("running", f"Step 9: Directing Resend to dispatch structured HTML email with PDF attached to {lead.email}...")
+        yield yield_event("running", f"Step 9: Connecting to Gmail SMTP and dispatching structured HTML email with PDF attached to {lead.email}...")
         
         try:
             send_report_email(lead, pdf_path, drive_link)
-            yield yield_event("running", "Resend email successfully delivered.", level="success", step_completed=9)
+            yield yield_event("running", "Email successfully delivered via Gmail SMTP.", level="success", step_completed=9)
             await asyncio.sleep(0.5)
         except Exception as e:
             err_trace = traceback.format_exc()
             logger.error(f"Critical Email Dispatch Failure:\n{err_trace}")
-            yield yield_event("error", f"Resend Email step encountered an delivery failure: {str(e)}", level="error", step_failed=9)
+            yield yield_event("error", f"Gmail SMTP step encountered a delivery failure: {str(e)}", level="error", step_failed=9)
             return
             
         # ==========================================

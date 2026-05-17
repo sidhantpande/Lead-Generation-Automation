@@ -8,11 +8,8 @@ class Settings(BaseSettings):
     # API Keys
     OPENAI_API_KEY: Optional[str] = Field(default=None)
     GEMINI_API_KEY: Optional[str] = Field(default=None)
-    RESEND_API_KEY: Optional[str] = Field(default=None)
-    
-    # Resend Settings
-    RESEND_FROM_EMAIL: str = Field(default="reports@yourdomain.com")
-    RESEND_FROM_NAME: str = Field(default="SimplifIQ Intelligence")
+    GMAIL_ADDRESS: Optional[str] = Field(default=None)
+    GMAIL_APP_PASSWORD: Optional[str] = Field(default=None)
     
     # Google API Settings
     GOOGLE_SERVICE_ACCOUNT_PATH: str = Field(default="credentials/service_account.json")
@@ -45,9 +42,11 @@ class Settings(BaseSettings):
         if not self.GEMINI_API_KEY or self.GEMINI_API_KEY.strip() == "" or "your_gemini" in self.GEMINI_API_KEY:
             missing.append("GEMINI_API_KEY")
             
-        # Check Resend key
-        if not self.RESEND_API_KEY or self.RESEND_API_KEY.strip() == "" or "your_resend" in self.RESEND_API_KEY:
-            missing.append("RESEND_API_KEY")
+        # Check Gmail SMTP Credentials
+        if not self.GMAIL_ADDRESS or self.GMAIL_ADDRESS.strip() == "" or "your_gmail" in self.GMAIL_ADDRESS:
+            missing.append("GMAIL_ADDRESS")
+        if not self.GMAIL_APP_PASSWORD or self.GMAIL_APP_PASSWORD.strip() == "" or "your_gmail_app" in self.GMAIL_APP_PASSWORD:
+            missing.append("GMAIL_APP_PASSWORD")
             
         # Check Google Service Account
         sa_path = Path(self.GOOGLE_SERVICE_ACCOUNT_PATH)
