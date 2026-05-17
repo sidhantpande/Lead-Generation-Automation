@@ -1,0 +1,19 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Local Credentials
+credentials/service_account.json
+.env
+
+# Generated Output Assets
+outputs/*.pdf
+logs/
+
+# IDE files
+.DS_Store
+.vscode/
+.idea/
