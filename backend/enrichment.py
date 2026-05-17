@@ -7,7 +7,7 @@ from google.genai import types
 
 from backend.config import settings
 from backend.utils.logger import log_step, logger
-from backend.utils.retry import api_retry_decorator
+from backend.utils.retry import api_retry_decorator, gemini_retry_decorator
 from backend.utils.fallbacks import get_default_prompts
 from backend.models import LeadInput, EnrichedCompanyData
 
@@ -23,7 +23,7 @@ def get_gemini_client() -> genai.Client:
         raise ValueError("Missing GEMINI_API_KEY. Configure it in your .env file.")
     return genai.Client(api_key=settings.GEMINI_API_KEY)
 
-@api_retry_decorator("Gemini Broad Sweep")
+@gemini_retry_decorator("Gemini Broad Sweep")
 async def run_gemini_broad_sweep(lead: LeadInput) -> str:
     """
     Step 1: Executes a broad web-search sweep via Gemini 1.5 Pro to gather overall details on the company.
@@ -117,7 +117,7 @@ async def run_openai_prompt_generator(lead: LeadInput, broad_sweep: str, scraped
     log_step(3, "ENRICHMENT", "6 customized prompts synthesized successfully.", "SUCCESS")
     return result_json
 
-@api_retry_decorator("Gemini Single Category Sweep")
+@gemini_retry_decorator("Gemini Single Category Sweep")
 async def run_gemini_category_sweep(category_name: str, query: str) -> str:
     """
     Sub-helper: Runs search grounding on a single targeted prompt.
@@ -146,31 +146,36 @@ async def run_gemini_category_sweep(category_name: str, query: str) -> str:
 
 async def run_gemini_deep_research(custom_prompts: Dict[str, str]) -> Dict[str, str]:
     """
-    Step 4: Executes 6 deep-research queries in parallel via Gemini with search grounding.
-    Uses asyncio.gather to optimize performance and reduce latency by up to 60%.
+    Step 4: Executes 6 deep-research queries with rate-limit friendly serialization.
+    Uses an asyncio.Semaphore(1) and micro-staggering to remain fully compatible with Free Tier API quotas.
     """
-    log_step(4, "ENRICHMENT", "Initiating Gemini deep research pass for 6 strategic verticals in parallel")
+    log_step(4, "ENRICHMENT", "Initiating Gemini deep research pass for 6 strategic verticals")
+    
+    sem = asyncio.Semaphore(1)  # Restrict to max 1 concurrent query to avoid free tier spikes
     
     async def run_single_category_sweep(category: str, query: str) -> tuple[str, str]:
-        try:
-            summary = await run_gemini_category_sweep(category, query)
-            log_step(4, "ENRICHMENT", f"Completed category sweep: {category}", "SUCCESS")
-            return category, summary
-        except Exception as e:
-            logger.error(f"Failed deep research category '{category}': {str(e)}")
-            log_step(4, "ENRICHMENT", f"Failed category sweep: {category}", "WARNING")
-            return category, f"Research failed. Insufficient online data for this vertical. Details: {str(e)}"
+        async with sem:
+            try:
+                # Add micro-stagger sleep between sequential requests
+                await asyncio.sleep(2)
+                summary = await run_gemini_category_sweep(category, query)
+                log_step(4, "ENRICHMENT", f"Completed category sweep: {category}", "SUCCESS")
+                return category, summary
+            except Exception as e:
+                logger.error(f"Failed deep research category '{category}': {str(e)}")
+                log_step(4, "ENRICHMENT", f"Failed category sweep: {category}", "WARNING")
+                return category, f"Research failed. Insufficient online data for this vertical. Details: {str(e)}"
 
-    # Generate concurrent coroutines for all prompts
+    # Generate concurrent coroutines for all prompts (will be processed sequentially due to semaphore)
     tasks = [run_single_category_sweep(category, query) for category, query in custom_prompts.items()]
     
-    # Run all grounding sweeps concurrently
+    # Run grounding sweeps smoothly
     gathered_results = await asyncio.gather(*tasks)
     
     # Map back to category results dictionary
     results = dict(gathered_results)
     
-    log_step(4, "ENRICHMENT", "Gemini 6-category parallel deep research pass finished.", "SUCCESS")
+    log_step(4, "ENRICHMENT", "Gemini 6-category deep research pass finished.", "SUCCESS")
     return results
 
 

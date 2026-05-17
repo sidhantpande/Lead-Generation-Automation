@@ -29,3 +29,15 @@ def api_retry_decorator(api_name: str):
         before_sleep=log_retry_attempt,
         reraise=True
     )
+
+def gemini_retry_decorator(api_name: str):
+    """
+    Returns a tenancy retry decorator configured specifically for Gemini API rate limits.
+    It will retry 5 times with generous backoff (5s -> 10s -> 20s -> 40s -> 60s) to wait out rate limit windows.
+    """
+    return retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=2, min=5, max=60),
+        before_sleep=log_retry_attempt,
+        reraise=True
+    )
