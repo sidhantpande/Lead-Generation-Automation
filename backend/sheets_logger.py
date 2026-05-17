@@ -43,7 +43,8 @@ def log_lead_to_sheets(lead: LeadInput, drive_link: str, status: str = "Success"
             scopes=scopes
         )
         
-        service = build("sheets", "v4", credentials=credentials)
+        from typing import Any
+        service: Any = build("sheets", "v4", credentials=credentials)
         
         # 3. Create the row values
         timestamp_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -78,7 +79,7 @@ def log_lead_to_sheets(lead: LeadInput, drive_link: str, status: str = "Success"
         
         # Check sheet and append
         try:
-            service.spreadsheets().values().append(
+            service.spreadsheets().values().append(  # type: ignore
                 spreadsheetId=spreadsheet_id,
                 range=range_name,
                 valueInputOption=value_input_option,
@@ -88,7 +89,7 @@ def log_lead_to_sheets(lead: LeadInput, drive_link: str, status: str = "Success"
         except Exception as append_err:
             # If the 'Lead Responses' tab does not exist, let's try appending to Sheet1 or creating it
             logger.warning(f"Failed appending specifically to tab 'Lead Responses' ({str(append_err)}). Trying base range A:K.")
-            service.spreadsheets().values().append(
+            service.spreadsheets().values().append(  # type: ignore
                 spreadsheetId=spreadsheet_id,
                 range="A:K",
                 valueInputOption=value_input_option,
